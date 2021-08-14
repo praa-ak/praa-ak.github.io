@@ -1,0 +1,87 @@
+
+body {
+	height: 100%;
+	width: 100%;
+	background-image: url("particles2.jpg");
+	background-repeat: repeat;
+	background-size: cover;
+}
+h1{
+	text-align: center;
+	font-family: fantasy;
+	text-decoration: underline;
+	color: black;
+	background-color: cornflowerblue;
+	opacity: 50%;
+}
+p{
+	text-align: center;
+	font-family: monospace;
+	font-size: 25px;
+	margin-left: 200px;
+	margin-right: 200px;
+	margin-bottom: 50px;
+	color: rgb(170, 201, 216);
+}
+h2{
+	text-align: center;
+	font-size: 40px;
+	font-family: inherit;
+    font-weight: bolder;
+	color: lightskyblue;
+}
+.fa {
+  padding: 10px;
+  font-size: 30px;
+  width: 20px;
+  margin-right: 5px;
+  margin-left: 5px;
+  text-align: center;
+  text-decoration: none;
+  border-radius: 50%;
+}
+.fa:hover {
+  opacity: 0.7;
+}
+.fa-facebook {
+  background: blue;
+  color: white;
+}
+.fa-instagram {
+  background: maroon;
+  color: white;
+}
+.fa-bars{
+	background-color: black;
+	color: white;
+	transition: margin-left .5s;
+}
+h3{
+	font-family: inherit;
+	font-size: 25px;
+	border-style: none;
+	border-radius: 25%;
+	border-width: 5px;
+	text-align: center;
+	color: lightskyblue;
+
+}
+h5{
+	font-family: inherit;
+	font-size: 27px;
+	text-align: center;
+	margin-bottom: 2px;
+	color: lightskyblue;
+}
+h6{
+	text-align: center;
+	font-size: 15px;
+	margin-bottom: 15px;
+	color: lightskyblue;
+
+}
+footer{
+	text-align:center;
+	color: rgb(170, 201, 216);
+	background-color: black;
+}
