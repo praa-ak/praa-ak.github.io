@@ -85,14 +85,14 @@ footer{
 	color: rgb(170, 201, 216);
 	background-color: black;
 }
-@media only screen and (max-width: 600px) {
+@media only screen and (max-width: 780px) {
 	p {
 	  font-family: Verdana, Geneva, Tahoma, sans-serif;
 	  font-size: 18px;
 	  text-align: center;
 	  text-overflow: none;
 	}
-	h2,h3,h4,h5.h6{
+	h2,h3,h4,h5,h6{
 		font-size: 30px;
 		text-align: center;
 	}
@@ -108,7 +108,7 @@ footer{
 	     color: white;
 	     background-color: red;
 	  }
-	h2,h3,h4,h5.h6{
+	h2,h3,h4,h5,h6{
 		font-size: 20px;
 		text-align: center;
 	}
