@@ -92,19 +92,23 @@ footer{
 	  text-align: center;
 	  text-overflow: none;
 	}
-	h1,h2,h3,h4,h5.h6{
+	h2,h3,h4,h5.h6{
 		font-size: 30px;
 		text-align: center;
 	}
   }
-  @media only screen and (max-width: 400px) {
+  @media only screen and (max-width: 600px) {
 	p {
 	  font-family: Verdana, Geneva, Tahoma, sans-serif;
 	  font-size: 10px;
 	  text-align: center;
 	  text-overflow: none;
 	}
-	h1,h2,h3,h4,h5.h6{
+	h1{
+	     color: white;
+	     background-color: red;
+	  }
+	h2,h3,h4,h5.h6{
 		font-size: 20px;
 		text-align: center;
 	}
