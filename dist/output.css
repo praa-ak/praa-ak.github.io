@@ -594,6 +594,10 @@ video {
   height: 0.75rem;
 }
 
+.h-96 {
+  height: 24rem;
+}
+
 .w-full {
   width: 100%;
 }
@@ -618,6 +622,10 @@ video {
   justify-content: center;
 }
 
+.gap-2 {
+  gap: 0.5rem;
+}
+
 .border {
   border-width: 1px;
 }
@@ -630,6 +638,10 @@ video {
 .object-cover {
   -o-object-fit: cover;
      object-fit: cover;
+}
+
+.p-10 {
+  padding: 2.5rem;
 }
 
 .text-4xl {
