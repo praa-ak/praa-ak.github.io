@@ -1,0 +1,44 @@
+# Additional Security for Admin Directory
+# Place this file in the /admin/ directory for extra protection
+
+# Prevent directory listing
+Options -Indexes
+
+# Block direct access to sensitive files
+<Files "*.log">
+    Deny from all
+</Files>
+
+<Files "config.*">
+    Deny from all
+</Files>
+
+# Add security headers
+<IfModule mod_headers.c>
+    # Prevent clickjacking
+    Header always append X-Frame-Options SAMEORIGIN
+    
+    # Prevent MIME type sniffing
+    Header set X-Content-Type-Options nosniff
+    
+    # Enable XSS protection
+    Header set X-XSS-Protection "1; mode=block"
+    
+    # Strict transport security (if using HTTPS)
+    # Header always set Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
+</IfModule>
+
+# Optional: IP whitelisting (uncomment and add your IP addresses)
+# <RequireAll>
+#     Require ip 192.168.1.100
+#     Require ip YOUR.IP.ADDRESS.HERE
+# </RequireAll>
+
+# Optional: Time-based access (uncomment to restrict access hours)
+# <IfModule mod_rewrite.c>
+#     RewriteEngine On
+#     # Block access between 10 PM and 6 AM (22:00-06:00)
+#     RewriteCond %{TIME_HOUR} >21 [OR]
+#     RewriteCond %{TIME_HOUR} <6
+#     RewriteRule ^.*$ - [F,L]
+# </IfModule>

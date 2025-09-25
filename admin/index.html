@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact Form Admin - Login</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .login-container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            padding: 40px;
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .login-header {
+            margin-bottom: 30px;
+        }
+
+        .login-header h1 {
+            color: #333;
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        .login-header p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .login-method {
+            margin-bottom: 20px;
+            padding: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            background: #f9f9f9;
+        }
+
+        .login-method h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .btn:hover {
+            background: #5a6fd8;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            margin-top: 10px;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .error-message {
+            color: #dc3545;
+            font-size: 14px;
+            margin-top: 10px;
+            padding: 10px;
+            background: #f8d7da;
+            border-radius: 5px;
+            display: none;
+        }
+
+        .success-message {
+            color: #155724;
+            font-size: 14px;
+            margin-top: 10px;
+            padding: 10px;
+            background: #d4edda;
+            border-radius: 5px;
+            display: none;
+        }
+
+        .method-separator {
+            margin: 20px 0;
+            text-align: center;
+            color: #666;
+            position: relative;
+        }
+
+        .method-separator:before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: #e0e0e0;
+            z-index: 1;
+        }
+
+        .method-separator span {
+            background: white;
+            padding: 0 15px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .security-info {
+            margin-top: 30px;
+            padding: 15px;
+            background: #e3f2fd;
+            border-radius: 5px;
+            font-size: 12px;
+            color: #1976d2;
+            text-align: left;
+        }
+
+        .security-info h4 {
+            margin-bottom: 10px;
+            color: #1976d2;
+        }
+
+        .security-info ul {
+            margin-left: 20px;
+        }
+
+        .security-info li {
+            margin-bottom: 5px;
+        }
+
+        @media (max-width: 480px) {
+            .login-container {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-header">
+            <h1>🔐 Admin Access</h1>
+            <p>Secure access to contact form submissions</p>
+        </div>
+
+        <!-- Method 1: Password Protection -->
+        <div class="login-method">
+            <h3>🔑 Password Access</h3>
+            <form id="passwordForm">
+                <div class="form-group">
+                    <label for="password">Admin Password:</label>
+                    <input type="password" id="password" placeholder="Enter admin password" required>
+                </div>
+                <button type="submit" class="btn">Access Admin Panel</button>
+            </form>
+        </div>
+
+        <div class="method-separator">
+            <span>OR</span>
+        </div>
+
+        <!-- Method 2: Email Verification -->
+        <div class="login-method">
+            <h3>📧 Email Verification</h3>
+            <form id="emailForm">
+                <div class="form-group">
+                    <label for="email">Your Email:</label>
+                    <input type="email" id="email" placeholder="Enter your email address" required>
+                </div>
+                <button type="submit" class="btn">Send Access Code</button>
+            </form>
+            
+            <div id="verificationStep" style="display: none;">
+                <div class="form-group">
+                    <label for="verificationCode">Verification Code:</label>
+                    <input type="text" id="verificationCode" placeholder="Enter 6-digit code" maxlength="6" required>
+                </div>
+                <button type="button" class="btn" onclick="verifyCode()">Verify & Access</button>
+            </div>
+        </div>
+
+        <div class="method-separator">
+            <span>OR</span>
+        </div>
+
+        <!-- Method 3: Browser Fingerprint -->
+        <div class="login-method">
+            <h3>🖥️ Device Authorization</h3>
+            <p style="font-size: 12px; color: #666; margin-bottom: 15px;">
+                Authorize this device for admin access
+            </p>
+            <button type="button" class="btn" onclick="authorizeDevice()">Authorize This Device</button>
+            <button type="button" class="btn btn-secondary" onclick="checkDeviceAuth()">Check Device Status</button>
+        </div>
+
+        <div id="errorMessage" class="error-message"></div>
+        <div id="successMessage" class="success-message"></div>
+
+        <div class="security-info">
+            <h4>Security Features:</h4>
+            <ul>
+                <li><strong>Password Protection:</strong> Set your admin password</li>
+                <li><strong>Email Verification:</strong> Receive access codes via email</li>
+                <li><strong>Device Authorization:</strong> Whitelist trusted devices</li>
+                <li><strong>Session Timeout:</strong> Auto-logout after inactivity</li>
+                <li><strong>Access Logging:</strong> Track admin panel access</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Security Configuration
+        const SECURITY_CONFIG = {
+            // Method 1: Password (set your password here)
+            adminPassword: 'tryhackme123', // CHANGE THIS PASSWORD!
+            
+            // Method 2: Authorized emails
+            authorizedEmails: [
+                'pradoshak404@example.com', // Add your email here
+                'your-email@domain.com'      // Add more emails as needed
+            ],
+            
+            // Method 3: Device fingerprinting
+            maxAuthorizedDevices: 3,
+            sessionTimeout: 60 * 60 * 1000, // 1 hour in milliseconds
+        };
+
+        // Generate device fingerprint
+        function generateDeviceFingerprint() {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            ctx.textBaseline = 'top';
+            ctx.font = '14px Arial';
+            ctx.fillText('Device fingerprint', 2, 2);
+            
+            const fingerprint = [
+                navigator.userAgent,
+                navigator.language,
+                screen.width + 'x' + screen.height,
+                new Date().getTimezoneOffset(),
+                canvas.toDataURL()
+            ].join('|');
+            
+            return btoa(fingerprint).slice(0, 32);
+        }
+
+        // Method 1: Password Authentication
+        document.getElementById('passwordForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const password = document.getElementById('password').value;
+            
+            if (password === SECURITY_CONFIG.adminPassword) {
+                grantAccess('password');
+            } else {
+                showError('Invalid password. Please try again.');
+                logAccessAttempt('password', false);
+            }
+        });
+
+        // Method 2: Email Verification
+        document.getElementById('emailForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            
+            if (SECURITY_CONFIG.authorizedEmails.includes(email)) {
+                // Generate and "send" verification code
+                const code = Math.floor(100000 + Math.random() * 900000);
+                sessionStorage.setItem('verificationCode', code);
+                sessionStorage.setItem('verificationEmail', email);
+                
+                // In real implementation, you would send this via email service
+                showSuccess(`Verification code sent to ${email}. Code: ${code} (In real app, this would be sent via email)`);
+                document.getElementById('verificationStep').style.display = 'block';
+            } else {
+                showError('Email not authorized for admin access.');
+                logAccessAttempt('email', false, email);
+            }
+        });
+
+        function verifyCode() {
+            const inputCode = document.getElementById('verificationCode').value;
+            const storedCode = sessionStorage.getItem('verificationCode');
+            
+            if (inputCode === storedCode) {
+                grantAccess('email');
+            } else {
+                showError('Invalid verification code.');
+                logAccessAttempt('email', false);
+            }
+        }
+
+        // Method 3: Device Authorization
+        function authorizeDevice() {
+            const deviceFingerprint = generateDeviceFingerprint();
+            const authorizedDevices = JSON.parse(localStorage.getItem('authorizedDevices') || '[]');
+            
+            if (authorizedDevices.length >= SECURITY_CONFIG.maxAuthorizedDevices) {
+                showError(`Maximum ${SECURITY_CONFIG.maxAuthorizedDevices} devices already authorized.`);
+                return;
+            }
+            
+            if (!authorizedDevices.includes(deviceFingerprint)) {
+                authorizedDevices.push(deviceFingerprint);
+                localStorage.setItem('authorizedDevices', JSON.stringify(authorizedDevices));
+                showSuccess('Device authorized successfully!');
+                logAccessAttempt('device', true);
+            } else {
+                showSuccess('Device already authorized.');
+            }
+        }
+
+        function checkDeviceAuth() {
+            const deviceFingerprint = generateDeviceFingerprint();
+            const authorizedDevices = JSON.parse(localStorage.getItem('authorizedDevices') || '[]');
+            
+            if (authorizedDevices.includes(deviceFingerprint)) {
+                grantAccess('device');
+            } else {
+                showError('This device is not authorized. Please authorize it first.');
+                logAccessAttempt('device', false);
+            }
+        }
+
+        // Grant access and redirect
+        function grantAccess(method) {
+            // Set session with timeout
+            const sessionData = {
+                authenticated: true,
+                method: method,
+                timestamp: Date.now(),
+                deviceFingerprint: generateDeviceFingerprint()
+            };
+            
+            sessionStorage.setItem('adminSession', JSON.stringify(sessionData));
+            logAccessAttempt(method, true);
+            
+            showSuccess('Access granted! Redirecting to admin panel...');
+            setTimeout(() => {
+                window.location.href = 'contact-admin-secure.html';
+            }, 1500);
+        }
+
+        // Utility functions
+        function showError(message) {
+            const errorEl = document.getElementById('errorMessage');
+            errorEl.textContent = message;
+            errorEl.style.display = 'block';
+            document.getElementById('successMessage').style.display = 'none';
+        }
+
+        function showSuccess(message) {
+            const successEl = document.getElementById('successMessage');
+            successEl.textContent = message;
+            successEl.style.display = 'block';
+            document.getElementById('errorMessage').style.display = 'none';
+        }
+
+        function logAccessAttempt(method, success, extra = '') {
+            const logs = JSON.parse(localStorage.getItem('adminAccessLogs') || '[]');
+            const logEntry = {
+                timestamp: new Date().toISOString(),
+                method: method,
+                success: success,
+                deviceFingerprint: generateDeviceFingerprint(),
+                userAgent: navigator.userAgent,
+                extra: extra
+            };
+            
+            logs.push(logEntry);
+            // Keep only last 100 logs
+            if (logs.length > 100) {
+                logs.splice(0, logs.length - 100);
+            }
+            
+            localStorage.setItem('adminAccessLogs', JSON.stringify(logs));
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check if already authenticated
+            const session = sessionStorage.getItem('adminSession');
+            if (session) {
+                const sessionData = JSON.parse(session);
+                const now = Date.now();
+                
+                // Check if session is still valid
+                if (now - sessionData.timestamp < SECURITY_CONFIG.sessionTimeout) {
+                    window.location.href = 'contact-admin-secure.html';
+                } else {
+                    sessionStorage.removeItem('adminSession');
+                }
+            }
+        });
+    </script>
+</body>
+</html>

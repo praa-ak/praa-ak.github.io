@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact Form Admin Panel - Secure</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f5f5f5;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 30px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .header h1 {
+            color: #333;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .logout-btn {
+            background: #dc3545;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .logout-btn:hover {
+            background: #c82333;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .controls {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #0056b3;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #1e7e34;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+        }
+
+        .btn-warning {
+            background: #ffc107;
+            color: #212529;
+        }
+
+        .btn-warning:hover {
+            background: #e0a800;
+        }
+
+        .submissions-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .submissions-table th,
+        .submissions-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .submissions-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .submissions-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .message-cell {
+            max-width: 300px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .timestamp {
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .search-box {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            width: 250px;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: #888;
+        }
+
+        .security-badge {
+            background: #28a745;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .session-info {
+            background: #e3f2fd;
+            padding: 10px 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: #1976d2;
+        }
+
+        .access-logs-btn {
+            background: #6c757d;
+            color: white;
+        }
+
+        .access-logs-btn:hover {
+            background: #5a6268;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 20px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close:hover {
+            color: black;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            
+            .header {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .controls {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+            }
+            
+            .submissions-table {
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔐 Secure Admin Panel</h1>
+            <div class="user-info">
+                <span class="security-badge" id="authMethod">Authenticated</span>
+                <span id="sessionInfo"></span>
+                <button class="logout-btn" onclick="logout()">Logout</button>
+            </div>
+        </div>
+
+        <div class="session-info" id="sessionDetails"></div>
+        
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-number" id="totalSubmissions">0</div>
+                <div>Total Submissions</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="todaySubmissions">0</div>
+                <div>Today's Submissions</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="thisWeekSubmissions">0</div>
+                <div>This Week</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="sessionTimeLeft">--</div>
+                <div>Session Time Left</div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="btn btn-primary" onclick="refreshData()">🔄 Refresh</button>
+            <button class="btn btn-success" onclick="exportSubmissions()">📥 Export CSV</button>
+            <button class="btn btn-danger" onclick="clearSubmissions()">🗑️ Clear All</button>
+            <button class="btn btn-warning access-logs-btn" onclick="showAccessLogs()">📊 Access Logs</button>
+            <input type="text" class="search-box" id="searchBox" placeholder="Search submissions..." oninput="filterSubmissions()">
+        </div>
+
+        <div id="submissionsContainer">
+            <div class="no-data">Loading submissions...</div>
+        </div>
+    </div>
+
+    <!-- Access Logs Modal -->
+    <div id="accessLogsModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Admin Access Logs</h2>
+            <div id="accessLogsContent"></div>
+        </div>
+    </div>
+
+    <script>
+        // Security check on page load
+        const SECURITY_CONFIG = {
+            sessionTimeout: 60 * 60 * 1000, // 1 hour
+        };
+
+        let allSubmissions = [];
+        let sessionTimer;
+
+        // Authentication check
+        function checkAuthentication() {
+            const session = sessionStorage.getItem('adminSession');
+            
+            if (!session) {
+                redirectToLogin('No valid session found');
+                return false;
+            }
+
+            try {
+                const sessionData = JSON.parse(session);
+                const now = Date.now();
+                
+                // Check session timeout
+                if (now - sessionData.timestamp > SECURITY_CONFIG.sessionTimeout) {
+                    redirectToLogin('Session expired');
+                    return false;
+                }
+
+                // Display session info
+                displaySessionInfo(sessionData);
+                startSessionTimer(sessionData);
+                
+                return true;
+            } catch (error) {
+                redirectToLogin('Invalid session data');
+                return false;
+            }
+        }
+
+        function redirectToLogin(reason) {
+            sessionStorage.removeItem('adminSession');
+            alert(reason + '. Please login again.');
+            window.location.href = 'index.html';
+        }
+
+        function displaySessionInfo(sessionData) {
+            const authMethodEl = document.getElementById('authMethod');
+            const sessionInfoEl = document.getElementById('sessionInfo');
+            const sessionDetailsEl = document.getElementById('sessionDetails');
+            
+            const authMethods = {
+                password: '🔑 Password',
+                email: '📧 Email Verified',
+                device: '🖥️ Device Authorized'
+            };
+            
+            authMethodEl.textContent = authMethods[sessionData.method] || 'Authenticated';
+            sessionInfoEl.textContent = `Logged in: ${new Date(sessionData.timestamp).toLocaleTimeString()}`;
+            
+            sessionDetailsEl.innerHTML = `
+                <strong>Session Details:</strong> 
+                Method: ${authMethods[sessionData.method]}, 
+                Started: ${new Date(sessionData.timestamp).toLocaleString()}, 
+                Device ID: ${sessionData.deviceFingerprint.slice(0, 8)}...
+            `;
+        }
+
+        function startSessionTimer(sessionData) {
+            sessionTimer = setInterval(() => {
+                const now = Date.now();
+                const elapsed = now - sessionData.timestamp;
+                const remaining = SECURITY_CONFIG.sessionTimeout - elapsed;
+                
+                if (remaining <= 0) {
+                    redirectToLogin('Session expired');
+                    return;
+                }
+                
+                const minutes = Math.floor(remaining / 60000);
+                const seconds = Math.floor((remaining % 60000) / 1000);
+                document.getElementById('sessionTimeLeft').textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            }, 1000);
+        }
+
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                sessionStorage.removeItem('adminSession');
+                clearInterval(sessionTimer);
+                
+                // Log the logout
+                const logs = JSON.parse(localStorage.getItem('adminAccessLogs') || '[]');
+                logs.push({
+                    timestamp: new Date().toISOString(),
+                    action: 'logout',
+                    success: true
+                });
+                localStorage.setItem('adminAccessLogs', JSON.stringify(logs));
+                
+                window.location.href = 'index.html';
+            }
+        }
+
+        // Load contact form utils (same as before)
+        if (typeof ContactFormUtils === 'undefined') {
+            window.ContactFormUtils = {
+                getStoredSubmissions: function() {
+                    return JSON.parse(localStorage.getItem('contactFormSubmissions') || '[]');
+                },
+                exportSubmissions: function() {
+                    const submissions = this.getStoredSubmissions();
+                    const csv = this.convertToCSV(submissions);
+                    this.downloadCSV(csv, 'contact-form-submissions.csv');
+                },
+                convertToCSV: function(submissions) {
+                    if (submissions.length === 0) return '';
+                    
+                    const headers = ['Timestamp', 'Name', 'Email', 'Subject', 'Message'];
+                    const csvContent = [
+                        headers.join(','),
+                        ...submissions.map(sub => [
+                            sub.timestamp,
+                            `"${sub.name || ''}"`,
+                            sub.email || '',
+                            `"${sub.subject || ''}"`,
+                            `"${(sub.message || '').replace(/"/g, '""')}"`
+                        ].join(','))
+                    ].join('\n');
+                    
+                    return csvContent;
+                },
+                downloadCSV: function(csv, filename) {
+                    const blob = new Blob([csv], { type: 'text/csv' });
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.setAttribute('hidden', '');
+                    a.setAttribute('href', url);
+                    a.setAttribute('download', filename);
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                },
+                clearSubmissions: function() {
+                    if (confirm('Are you sure you want to clear all stored submissions?')) {
+                        localStorage.removeItem('contactFormSubmissions');
+                        alert('All submissions cleared.');
+                        return true;
+                    }
+                    return false;
+                }
+            };
+        }
+
+        // Data management functions (same as before)
+        function refreshData() {
+            allSubmissions = ContactFormUtils.getStoredSubmissions();
+            updateStats();
+            displaySubmissions(allSubmissions);
+        }
+
+        function updateStats() {
+            const total = allSubmissions.length;
+            const today = new Date().toDateString();
+            const oneWeekAgo = new Date();
+            oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+
+            const todayCount = allSubmissions.filter(sub => 
+                new Date(sub.timestamp).toDateString() === today
+            ).length;
+
+            const thisWeekCount = allSubmissions.filter(sub => 
+                new Date(sub.timestamp) >= oneWeekAgo
+            ).length;
+
+            document.getElementById('totalSubmissions').textContent = total;
+            document.getElementById('todaySubmissions').textContent = todayCount;
+            document.getElementById('thisWeekSubmissions').textContent = thisWeekCount;
+        }
+
+        function displaySubmissions(submissions) {
+            const container = document.getElementById('submissionsContainer');
+            
+            if (submissions.length === 0) {
+                container.innerHTML = '<div class="no-data">No submissions found.</div>';
+                return;
+            }
+
+            const table = document.createElement('table');
+            table.className = 'submissions-table';
+            
+            table.innerHTML = `
+                <thead>
+                    <tr>
+                        <th>Date & Time</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Subject</th>
+                        <th>Message</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${submissions.map(sub => `
+                        <tr>
+                            <td class="timestamp">${formatDateTime(sub.timestamp)}</td>
+                            <td>${escapeHtml(sub.name || '')}</td>
+                            <td><a href="mailto:${escapeHtml(sub.email || '')}">${escapeHtml(sub.email || '')}</a></td>
+                            <td>${escapeHtml(sub.subject || '')}</td>
+                            <td class="message-cell" title="${escapeHtml(sub.message || '')}">${escapeHtml(sub.message || '')}</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            `;
+            
+            container.innerHTML = '';
+            container.appendChild(table);
+        }
+
+        function formatDateTime(timestamp) {
+            return new Date(timestamp).toLocaleString();
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function filterSubmissions() {
+            const searchTerm = document.getElementById('searchBox').value.toLowerCase();
+            
+            const filtered = allSubmissions.filter(sub => 
+                (sub.name || '').toLowerCase().includes(searchTerm) ||
+                (sub.email || '').toLowerCase().includes(searchTerm) ||
+                (sub.subject || '').toLowerCase().includes(searchTerm) ||
+                (sub.message || '').toLowerCase().includes(searchTerm)
+            );
+            
+            displaySubmissions(filtered);
+        }
+
+        function exportSubmissions() {
+            if (allSubmissions.length === 0) {
+                alert('No submissions to export.');
+                return;
+            }
+            
+            ContactFormUtils.exportSubmissions();
+        }
+
+        function clearSubmissions() {
+            if (ContactFormUtils.clearSubmissions()) {
+                refreshData();
+            }
+        }
+
+        // Access logs functionality
+        function showAccessLogs() {
+            const modal = document.getElementById('accessLogsModal');
+            const content = document.getElementById('accessLogsContent');
+            const logs = JSON.parse(localStorage.getItem('adminAccessLogs') || '[]');
+            
+            if (logs.length === 0) {
+                content.innerHTML = '<p>No access logs found.</p>';
+            } else {
+                const table = `
+                    <table class="submissions-table">
+                        <thead>
+                            <tr>
+                                <th>Timestamp</th>
+                                <th>Method/Action</th>
+                                <th>Success</th>
+                                <th>Device ID</th>
+                                <th>Extra Info</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${logs.slice(-50).reverse().map(log => `
+                                <tr>
+                                    <td>${new Date(log.timestamp).toLocaleString()}</td>
+                                    <td>${log.method || log.action || 'Unknown'}</td>
+                                    <td>${log.success ? '✅' : '❌'}</td>
+                                    <td>${log.deviceFingerprint ? log.deviceFingerprint.slice(0, 8) + '...' : 'N/A'}</td>
+                                    <td>${log.extra || ''}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+                content.innerHTML = table;
+            }
+            
+            modal.style.display = 'block';
+        }
+
+        // Modal close functionality
+        document.querySelector('.close').onclick = function() {
+            document.getElementById('accessLogsModal').style.display = 'none';
+        }
+
+        window.onclick = function(event) {
+            const modal = document.getElementById('accessLogsModal');
+            if (event.target === modal) {
+                modal.style.display = 'none';
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            if (checkAuthentication()) {
+                refreshData();
+                // Auto-refresh every 30 seconds
+                setInterval(refreshData, 30000);
+            }
+        });
+
+        // Prevent back button access after logout
+        window.addEventListener('pageshow', function(event) {
+            if (event.persisted) {
+                checkAuthentication();
+            }
+        });
+    </script>
+</body>
+</html>
