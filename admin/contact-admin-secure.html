@@ -356,6 +356,19 @@
                     return false;
                 }
 
+                // Verify session token integrity
+                if (!sessionData.token || sessionData.token.length < 32) {
+                    redirectToLogin('Invalid session token');
+                    return false;
+                }
+
+                // Verify device fingerprint matches
+                const currentFingerprint = generateDeviceFingerprint();
+                if (sessionData.deviceFingerprint !== currentFingerprint) {
+                    redirectToLogin('Device fingerprint mismatch - security violation');
+                    return false;
+                }
+
                 // Display session info
                 displaySessionInfo(sessionData);
                 startSessionTimer(sessionData);
@@ -365,6 +378,27 @@
                 redirectToLogin('Invalid session data');
                 return false;
             }
+        }
+
+        function generateDeviceFingerprint() {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            ctx.textBaseline = 'top';
+            ctx.font = '14px Arial';
+            ctx.fillText('Device fingerprint', 2, 2);
+            
+            // Include more entropy for better security
+            const fingerprint = [
+                navigator.userAgent,
+                navigator.language,
+                screen.width + 'x' + screen.height,
+                new Date().getTimezoneOffset(),
+                canvas.toDataURL(),
+                navigator.hardwareConcurrency || 0,
+                navigator.deviceMemory || 0
+            ].join('|');
+            
+            return btoa(fingerprint).slice(0, 32);
         }
 
         function redirectToLogin(reason) {

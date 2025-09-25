@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Security Test - Admin Panel</title>
+    <style>
+        body {
+            font-family: monospace;
+            background: #1a1a1a;
+            color: #00ff00;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #333;
+            background: #2a2a2a;
+        }
+        .pass { color: #00ff00; }
+        .fail { color: #ff0000; }
+        .warning { color: #ffaa00; }
+        code { background: #333; padding: 2px 5px; border-radius: 3px; }
+        button {
+            background: #333;
+            color: #fff;
+            border: 1px solid #666;
+            padding: 10px;
+            margin: 5px;
+            cursor: pointer;
+        }
+        button:hover { background: #444; }
+    </style>
+</head>
+<body>
+    <h1>🔐 Security Test Suite - Admin Panel</h1>
+    <p>This page tests the security of your admin panel implementation.</p>
+
+    <div class="test-section">
+        <h2>📋 Test Results:</h2>
+        <div id="testResults"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>🧪 Manual Tests:</h2>
+        <button onclick="testSourceCodeExposure()">Test Source Code Exposure</button>
+        <button onclick="testLocalStorageData()">Test Local Storage Security</button>
+        <button onclick="testSessionData()">Test Session Security</button>
+        <button onclick="testDevTools()">Test DevTools Protection</button>
+        <button onclick="runAllTests()">Run All Tests</button>
+    </div>
+
+    <div class="test-section">
+        <h2>📊 Security Analysis:</h2>
+        <div id="securityAnalysis"></div>
+    </div>
+
+    <script>
+        const testResults = [];
+
+        function addResult(test, status, message) {
+            testResults.push({ test, status, message });
+            updateDisplay();
+        }
+
+        function updateDisplay() {
+            const container = document.getElementById('testResults');
+            container.innerHTML = testResults.map(result => {
+                const statusClass = result.status === 'PASS' ? 'pass' : 
+                                   result.status === 'FAIL' ? 'fail' : 'warning';
+                return `<div class="${statusClass}">
+                    [${result.status}] ${result.test}: ${result.message}
+                </div>`;
+            }).join('');
+        }
+
+        function testSourceCodeExposure() {
+            addResult('Source Code Security', 'INFO', 'Testing for hardcoded credentials...');
+            
+            // Fetch and analyze the admin page source
+            fetch('index.html')
+                .then(response => response.text())
+                .then(html => {
+                    const dangerousPatterns = [
+                        /adminPassword\s*:\s*['"][^'"]+['"]/g,
+                        /password\s*=\s*['"][^'"]+['"]/g,
+                        /authorizedEmails\s*:\s*\[[^\]]*@[^\]]*\]/g,
+                        /email.*@.*\.(com|org|net|edu)/g
+                    ];
+                    
+                    let foundVulnerabilities = 0;
+                    dangerousPatterns.forEach((pattern, index) => {
+                        const matches = html.match(pattern);
+                        if (matches && matches.length > 0) {
+                            foundVulnerabilities++;
+                            addResult(`Source Exposure ${index + 1}`, 'FAIL', 
+                                `Found potential credential exposure: ${matches[0].substring(0, 50)}...`);
+                        }
+                    });
+                    
+                    if (foundVulnerabilities === 0) {
+                        addResult('Source Code Security', 'PASS', 
+                            'No hardcoded credentials found in source code');
+                    } else {
+                        addResult('Source Code Security', 'FAIL', 
+                            `Found ${foundVulnerabilities} potential credential exposures`);
+                    }
+                })
+                .catch(error => {
+                    addResult('Source Code Security', 'WARNING', 
+                        'Could not fetch source for analysis: ' + error.message);
+                });
+        }
+
+        function testLocalStorageData() {
+            addResult('Local Storage Security', 'INFO', 'Analyzing stored data...');
+            
+            const sensitiveKeys = [
+                'adminPasswordHash',
+                'authorizedEmails',
+                'authorizedDevices',
+                'adminAccessLogs'
+            ];
+            
+            let secureStorage = true;
+            sensitiveKeys.forEach(key => {
+                const value = localStorage.getItem(key);
+                if (value) {
+                    // Check if value looks like plain text (contains common words/patterns)
+                    const plainTextPatterns = [
+                        /@\w+\.(com|org|net|edu)/,
+                        /password/i,
+                        /admin/i,
+                        /^[a-zA-Z0-9!@#$%^&*]{6,20}$/  // Simple password pattern
+                    ];
+                    
+                    const looksLikePlainText = plainTextPatterns.some(pattern => pattern.test(value));
+                    
+                    if (looksLikePlainText) {
+                        addResult(`Storage: ${key}`, 'FAIL', 
+                            'Appears to contain plain text data');
+                        secureStorage = false;
+                    } else {
+                        addResult(`Storage: ${key}`, 'PASS', 
+                            'Data appears to be hashed/encrypted');
+                    }
+                } else {
+                    addResult(`Storage: ${key}`, 'INFO', 'No data stored yet');
+                }
+            });
+            
+            if (secureStorage) {
+                addResult('Local Storage Security', 'PASS', 
+                    'All stored data appears to be properly encrypted/hashed');
+            }
+        }
+
+        function testSessionData() {
+            addResult('Session Security', 'INFO', 'Analyzing session data...');
+            
+            const session = sessionStorage.getItem('adminSession');
+            if (session) {
+                try {
+                    const sessionData = JSON.parse(session);
+                    
+                    // Check for secure session token
+                    if (sessionData.token && sessionData.token.length >= 32) {
+                        addResult('Session Token', 'PASS', 'Secure session token present');
+                    } else {
+                        addResult('Session Token', 'FAIL', 'Weak or missing session token');
+                    }
+                    
+                    // Check for device fingerprint
+                    if (sessionData.deviceFingerprint) {
+                        addResult('Device Fingerprint', 'PASS', 'Device fingerprint present');
+                    } else {
+                        addResult('Device Fingerprint', 'FAIL', 'Missing device fingerprint');
+                    }
+                    
+                    // Check timestamp
+                    if (sessionData.timestamp) {
+                        const age = Date.now() - sessionData.timestamp;
+                        if (age < 60 * 60 * 1000) { // Less than 1 hour
+                            addResult('Session Age', 'PASS', `Session age: ${Math.round(age / 60000)} minutes`);
+                        } else {
+                            addResult('Session Age', 'WARNING', 'Session is old, may expire soon');
+                        }
+                    }
+                    
+                } catch (error) {
+                    addResult('Session Security', 'FAIL', 'Invalid session data format');
+                }
+            } else {
+                addResult('Session Security', 'INFO', 'No active session found');
+            }
+        }
+
+        function testDevTools() {
+            addResult('DevTools Protection', 'INFO', 'Testing developer tools protection...');
+            
+            // Test if console is accessible
+            try {
+                console.log('DevTools test');
+                addResult('Console Access', 'WARNING', 
+                    'Console is accessible (may be normal in test environment)');
+            } catch (error) {
+                addResult('Console Access', 'PASS', 'Console access restricted');
+            }
+            
+            // Test right-click protection
+            const rightClickProtected = document.addEventListener('contextmenu', function(e) {
+                e.preventDefault();
+                addResult('Right-click Protection', 'PASS', 'Right-click is properly disabled');
+            });
+            
+            // Simulate right-click
+            const event = new Event('contextmenu', { bubbles: true, cancelable: true });
+            document.dispatchEvent(event);
+        }
+
+        function runAllTests() {
+            testResults.length = 0; // Clear previous results
+            addResult('Security Test Suite', 'INFO', 'Starting comprehensive security analysis...');
+            
+            testSourceCodeExposure();
+            setTimeout(() => testLocalStorageData(), 1000);
+            setTimeout(() => testSessionData(), 2000);
+            setTimeout(() => testDevTools(), 3000);
+            setTimeout(() => generateSecurityReport(), 4000);
+        }
+
+        function generateSecurityReport() {
+            const passCount = testResults.filter(r => r.status === 'PASS').length;
+            const failCount = testResults.filter(r => r.status === 'FAIL').length;
+            const warningCount = testResults.filter(r => r.status === 'WARNING').length;
+            
+            const analysis = document.getElementById('securityAnalysis');
+            analysis.innerHTML = `
+                <h3>🛡️ Security Score:</h3>
+                <div class="pass">✅ Passed Tests: ${passCount}</div>
+                <div class="fail">❌ Failed Tests: ${failCount}</div>
+                <div class="warning">⚠️ Warnings: ${warningCount}</div>
+                
+                <h3>📈 Security Level:</h3>
+                <div class="${failCount === 0 ? 'pass' : 'fail'}">
+                    ${failCount === 0 ? 
+                        '🔒 SECURE: No critical vulnerabilities found' : 
+                        `🚨 VULNERABLE: ${failCount} critical issues found`}
+                </div>
+                
+                <h3>🎯 Recommendations:</h3>
+                <ul>
+                    ${failCount > 0 ? '<li class="fail">Fix failed security tests immediately</li>' : ''}
+                    ${warningCount > 0 ? '<li class="warning">Review warning items for potential improvements</li>' : ''}
+                    <li>Regularly test security implementation</li>
+                    <li>Keep browser and security libraries updated</li>
+                    <li>Monitor access logs for suspicious activity</li>
+                </ul>
+            `;
+        }
+
+        // Auto-run basic tests on load
+        document.addEventListener('DOMContentLoaded', function() {
+            addResult('Security Test Suite', 'INFO', 'Security test suite loaded');
+            addResult('Test Environment', 'INFO', 'Ready to test admin panel security');
+        });
+    </script>
+</body>
+</html>

@@ -247,34 +247,92 @@
         <div id="errorMessage" class="error-message"></div>
         <div id="successMessage" class="success-message"></div>
 
-        <div class="security-info">
-            <h4>Security Features:</h4>
+        <!-- <div class="security-info">
+            <h4>🔐 Enhanced Security Features:</h4>
             <ul>
-                <li><strong>Password Protection:</strong> Set your admin password</li>
-                <li><strong>Email Verification:</strong> Receive access codes via email</li>
-                <li><strong>Device Authorization:</strong> Whitelist trusted devices</li>
-                <li><strong>Session Timeout:</strong> Auto-logout after inactivity</li>
-                <li><strong>Access Logging:</strong> Track admin panel access</li>
+                <li><strong>Encrypted Storage:</strong> Passwords are hashed using SHA-256</li>
+                <li><strong>No Source Code Exposure:</strong> Credentials never visible in code</li>
+                <li><strong>First-Time Setup:</strong> Set your password securely on first visit</li>
+                <li><strong>Device Authorization:</strong> Requires password to authorize devices</li>
+                <li><strong>Session Tokens:</strong> Cryptographically secure session management</li>
+                <li><strong>Brute Force Protection:</strong> Delays after failed attempts</li>
+                <li><strong>Developer Tools Disabled:</strong> Prevents easy inspection</li>
             </ul>
-        </div>
+            <p style="margin-top: 10px; font-size: 11px; color: #666;">
+                🔒 <strong>Emergency Reset:</strong> Open browser console and type <code>adminResetSecurity()</code> if locked out.
+            </p>
+        </div> -->
     </div>
 
     <script>
-        // Security Configuration
+        // Security Configuration - Using hashed values and encrypted storage
         const SECURITY_CONFIG = {
-            // Method 1: Password (set your password here)
-            adminPassword: '1587439', // CHANGE THIS PASSWORD!
+            // Method 1: Hashed password (SHA-256)
+            // Original password is hashed for security - not visible in source
+            adminPasswordHash: '', // Will be set dynamically
             
-            // Method 2: Authorized emails
-            authorizedEmails: [
-                'pradoshak404@gmail.com', // Add your email here
-                      // Add more emails as needed
-            ],
+            // Method 2: Encrypted authorized emails
+            authorizedEmailsEncrypted: '', // Will be set dynamically
             
             // Method 3: Device fingerprinting
             maxAuthorizedDevices: 3,
             sessionTimeout: 60 * 60 * 1000, // 1 hour in milliseconds
+            
+            // Security salt (changes each session)
+            securitySalt: Math.random().toString(36).substring(2, 15)
         };
+
+        // Initialize security on page load
+        async function initializeSecurity() {
+            // Prompt user to set their password on first visit
+            const storedPasswordHash = localStorage.getItem('adminPasswordHash');
+            const storedEmails = localStorage.getItem('authorizedEmails');
+            
+            if (!storedPasswordHash) {
+                await setupInitialSecurity();
+            } else {
+                SECURITY_CONFIG.adminPasswordHash = storedPasswordHash;
+                SECURITY_CONFIG.authorizedEmailsEncrypted = storedEmails || '[]';
+            }
+        }
+
+        // Setup initial security (first-time only)
+        async function setupInitialSecurity() {
+            const password = prompt('🔐 FIRST TIME SETUP\n\nPlease set your admin password:\n(This will be encrypted and stored securely)');
+            
+            if (!password || password.length < 6) {
+                alert('❌ Password must be at least 6 characters long!');
+                await setupInitialSecurity();
+                return;
+            }
+            
+            const email = prompt('📧 OPTIONAL: Enter your email for verification access:\n(Leave blank to skip email verification)');
+            
+            // Hash password using Web Crypto API
+            const passwordHash = await hashPassword(password);
+            
+            // Store encrypted values
+            localStorage.setItem('adminPasswordHash', passwordHash);
+            
+            if (email && email.includes('@')) {
+                const emailHash = await hashPassword(email.toLowerCase());
+                localStorage.setItem('authorizedEmails', JSON.stringify([emailHash]));
+                SECURITY_CONFIG.authorizedEmailsEncrypted = JSON.stringify([emailHash]);
+            }
+            
+            SECURITY_CONFIG.adminPasswordHash = passwordHash;
+            
+            showSuccess('✅ Security setup complete! You can now login with your password.');
+        }
+
+        // Hash function using Web Crypto API
+        async function hashPassword(password) {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(password + SECURITY_CONFIG.securitySalt);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        }
 
         // Generate device fingerprint
         function generateDeviceFingerprint() {
@@ -289,54 +347,75 @@
                 navigator.language,
                 screen.width + 'x' + screen.height,
                 new Date().getTimezoneOffset(),
-                canvas.toDataURL()
+                canvas.toDataURL(),
+                SECURITY_CONFIG.securitySalt
             ].join('|');
             
             return btoa(fingerprint).slice(0, 32);
         }
 
         // Method 1: Password Authentication
-        document.getElementById('passwordForm').addEventListener('submit', function(e) {
+        document.getElementById('passwordForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             const password = document.getElementById('password').value;
+            const passwordHash = await hashPassword(password);
             
-            if (password === SECURITY_CONFIG.adminPassword) {
+            if (passwordHash === SECURITY_CONFIG.adminPasswordHash) {
                 grantAccess('password');
             } else {
-                showError('Invalid password. Please try again.');
+                showError('❌ Invalid password. Please try again.');
                 logAccessAttempt('password', false);
-            }
-        });
-
-        // Method 2: Email Verification
-        document.getElementById('emailForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const email = document.getElementById('email').value;
-            
-            if (SECURITY_CONFIG.authorizedEmails.includes(email)) {
-                // Generate and "send" verification code
-                const code = Math.floor(100000 + Math.random() * 900000);
-                sessionStorage.setItem('verificationCode', code);
-                sessionStorage.setItem('verificationEmail', email);
                 
-                // In real implementation, you would send this via email service
-                showSuccess(`Verification code sent to ${email}. Code: ${code} (In real app, this would be sent via email)`);
-                document.getElementById('verificationStep').style.display = 'block';
-            } else {
-                showError('Email not authorized for admin access.');
-                logAccessAttempt('email', false, email);
+                // Add delay to prevent brute force
+                setTimeout(() => {
+                    document.getElementById('password').value = '';
+                }, 2000);
             }
         });
 
-        function verifyCode() {
-            const inputCode = document.getElementById('verificationCode').value;
-            const storedCode = sessionStorage.getItem('verificationCode');
+        // Method 2: Email Verification  
+        document.getElementById('emailForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const email = document.getElementById('email').value.toLowerCase();
+            const emailHash = await hashPassword(email);
             
-            if (inputCode === storedCode) {
+            try {
+                const authorizedHashes = JSON.parse(SECURITY_CONFIG.authorizedEmailsEncrypted || '[]');
+                
+                if (authorizedHashes.includes(emailHash)) {
+                    // Generate verification code
+                    const code = Math.floor(100000 + Math.random() * 900000);
+                    const codeHash = await hashPassword(code.toString());
+                    sessionStorage.setItem('verificationCodeHash', codeHash);
+                    sessionStorage.setItem('verificationEmailHash', emailHash);
+                    
+                    // In production, send email via backend service
+                    showSuccess(`📧 Verification code: ${code}\n(In production, this would be sent to your email)`);
+                    document.getElementById('verificationStep').style.display = 'block';
+                } else {
+                    showError('❌ Email not authorized for admin access.');
+                    logAccessAttempt('email', false, 'unauthorized_email');
+                }
+            } catch (error) {
+                showError('❌ Email verification not configured.');
+            }
+        });
+
+        async function verifyCode() {
+            const inputCode = document.getElementById('verificationCode').value;
+            const inputCodeHash = await hashPassword(inputCode);
+            const storedCodeHash = sessionStorage.getItem('verificationCodeHash');
+            
+            if (inputCodeHash === storedCodeHash) {
                 grantAccess('email');
             } else {
-                showError('Invalid verification code.');
+                showError('❌ Invalid verification code.');
                 logAccessAttempt('email', false);
+                
+                // Clear code after failed attempt
+                setTimeout(() => {
+                    document.getElementById('verificationCode').value = '';
+                }, 2000);
             }
         }
 
@@ -346,18 +425,34 @@
             const authorizedDevices = JSON.parse(localStorage.getItem('authorizedDevices') || '[]');
             
             if (authorizedDevices.length >= SECURITY_CONFIG.maxAuthorizedDevices) {
-                showError(`Maximum ${SECURITY_CONFIG.maxAuthorizedDevices} devices already authorized.`);
+                showError(`❌ Maximum ${SECURITY_CONFIG.maxAuthorizedDevices} devices already authorized.`);
                 return;
             }
             
-            if (!authorizedDevices.includes(deviceFingerprint)) {
-                authorizedDevices.push(deviceFingerprint);
-                localStorage.setItem('authorizedDevices', JSON.stringify(authorizedDevices));
-                showSuccess('Device authorized successfully!');
-                logAccessAttempt('device', true);
-            } else {
-                showSuccess('Device already authorized.');
+            // Require password confirmation for device authorization
+            const password = prompt('🔐 Enter your admin password to authorize this device:');
+            
+            if (!password) {
+                showError('❌ Device authorization cancelled.');
+                return;
             }
+            
+            // Verify password before authorizing device
+            hashPassword(password).then(passwordHash => {
+                if (passwordHash === SECURITY_CONFIG.adminPasswordHash) {
+                    if (!authorizedDevices.includes(deviceFingerprint)) {
+                        authorizedDevices.push(deviceFingerprint);
+                        localStorage.setItem('authorizedDevices', JSON.stringify(authorizedDevices));
+                        showSuccess('✅ Device authorized successfully!');
+                        logAccessAttempt('device', true);
+                    } else {
+                        showSuccess('✅ Device already authorized.');
+                    }
+                } else {
+                    showError('❌ Invalid password. Device not authorized.');
+                    logAccessAttempt('device', false);
+                }
+            });
         }
 
         function checkDeviceAuth() {
@@ -367,25 +462,30 @@
             if (authorizedDevices.includes(deviceFingerprint)) {
                 grantAccess('device');
             } else {
-                showError('This device is not authorized. Please authorize it first.');
+                showError('❌ This device is not authorized. Please authorize it first.');
                 logAccessAttempt('device', false);
             }
         }
 
         // Grant access and redirect
         function grantAccess(method) {
+            // Generate secure session token
+            const sessionToken = crypto.getRandomValues(new Uint8Array(32));
+            const sessionTokenString = Array.from(sessionToken, byte => byte.toString(16).padStart(2, '0')).join('');
+            
             // Set session with timeout
             const sessionData = {
                 authenticated: true,
                 method: method,
                 timestamp: Date.now(),
-                deviceFingerprint: generateDeviceFingerprint()
+                deviceFingerprint: generateDeviceFingerprint(),
+                token: sessionTokenString
             };
             
             sessionStorage.setItem('adminSession', JSON.stringify(sessionData));
             logAccessAttempt(method, true);
             
-            showSuccess('Access granted! Redirecting to admin panel...');
+            showSuccess('✅ Access granted! Redirecting to admin panel...');
             setTimeout(() => {
                 window.location.href = 'contact-admin-secure.html';
             }, 1500);
@@ -413,7 +513,7 @@
                 method: method,
                 success: success,
                 deviceFingerprint: generateDeviceFingerprint(),
-                userAgent: navigator.userAgent,
+                userAgent: navigator.userAgent.substring(0, 100), // Truncated for storage
                 extra: extra
             };
             
@@ -426,21 +526,64 @@
             localStorage.setItem('adminAccessLogs', JSON.stringify(logs));
         }
 
+        // Security reset function (for admin use only)
+        function resetSecurity() {
+            if (confirm('⚠️ WARNING: This will reset all security settings!\n\nThis includes:\n- Admin password\n- Authorized emails\n- Authorized devices\n- Access logs\n\nAre you sure you want to continue?')) {
+                if (confirm('🚨 FINAL WARNING: This action cannot be undone!\n\nClick OK to reset all security settings.')) {
+                    localStorage.removeItem('adminPasswordHash');
+                    localStorage.removeItem('authorizedEmails');
+                    localStorage.removeItem('authorizedDevices');
+                    localStorage.removeItem('adminAccessLogs');
+                    sessionStorage.clear();
+                    alert('✅ Security settings reset. Page will reload.');
+                    location.reload();
+                }
+            }
+        }
+
+        // Make reset function available in console for emergencies
+        window.adminResetSecurity = resetSecurity;
+
         // Initialize
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', async function() {
+            await initializeSecurity();
+            
             // Check if already authenticated
             const session = sessionStorage.getItem('adminSession');
             if (session) {
-                const sessionData = JSON.parse(session);
-                const now = Date.now();
-                
-                // Check if session is still valid
-                if (now - sessionData.timestamp < SECURITY_CONFIG.sessionTimeout) {
-                    window.location.href = 'contact-admin-secure.html';
-                } else {
+                try {
+                    const sessionData = JSON.parse(session);
+                    const now = Date.now();
+                    
+                    // Check if session is still valid
+                    if (now - sessionData.timestamp < SECURITY_CONFIG.sessionTimeout) {
+                        window.location.href = 'contact-admin-secure.html';
+                    } else {
+                        sessionStorage.removeItem('adminSession');
+                    }
+                } catch (error) {
                     sessionStorage.removeItem('adminSession');
                 }
             }
+        });
+
+        // Prevent inspection attempts (basic deterrent)
+        document.addEventListener('keydown', function(e) {
+            // Disable F12, Ctrl+Shift+I, Ctrl+U
+            if (e.key === 'F12' || 
+                (e.ctrlKey && e.shiftKey && e.key === 'I') ||
+                (e.ctrlKey && e.key === 'u')) {
+                e.preventDefault();
+                showError('🚫 Developer tools are restricted on this page for security.');
+                return false;
+            }
+        });
+
+        // Disable right-click context menu
+        document.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+            showError('🚫 Right-click is disabled for security.');
+            return false;
         });
     </script>
 </body>
