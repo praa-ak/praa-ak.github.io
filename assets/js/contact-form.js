@@ -28,14 +28,14 @@
             // Show loading state
             showLoadingState(thisForm);
             
-            // Submit to Formspree
-            submitToFormspree(thisForm, formData);
-            
-            // Alternative: Submit to local storage for testing
-            // submitToLocalStorage(thisForm, formData);
-            
-            // Alternative: Submit to Google Sheets (requires setup)
-            // submitToGoogleSheets(thisForm, formData);
+            // Check if Formspree is configured, otherwise use local storage
+            if (FORMSPREE_ENDPOINT && FORMSPREE_ENDPOINT !== 'YOUR_FORMSPREE_ENDPOINT_HERE') {
+                // Submit to Formspree
+                submitToFormspree(thisForm, formData);
+            } else {
+                // Submit to local storage (default for testing/development)
+                submitToLocalStorage(thisForm, formData);
+            }
         });
     });
 
@@ -43,11 +43,6 @@
      * Submit form to Formspree
      */
     function submitToFormspree(form, formData) {
-        if (!FORMSPREE_ENDPOINT || FORMSPREE_ENDPOINT === 'https://formspree.io/f/xvgwonak') {
-            displayError(form, 'Please configure your Formspree endpoint in contact-form.js');
-            return;
-        }
-
         fetch(FORMSPREE_ENDPOINT, {
             method: 'POST',
             body: formData,
