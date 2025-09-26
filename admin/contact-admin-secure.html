@@ -514,463 +514,240 @@
         // Load submissions from localStorage - FIXED: Use consistent key
         function loadSubmissions() {
             try {
-                const stored = localStorage.getItem(STORAGE_KEY);
-                submissions = stored ? JSON.parse(stored) : [];
-                filteredSubmissions = [...submissions];
+                console.log('🔄 Loading submissions from localStorage...');
+                console.log('Storage key:', STORAGE_KEY);
                 
-                console.log(`📊 Loaded ${submissions.length} submissions from storage`);
+                // Check if localStorage is available
+                if (typeof(Storage) === "undefined") {
+                    throw new Error('localStorage is not supported in this browser');
+                }
+                
+                // Try to get data from localStorage
+                const stored = localStorage.getItem(STORAGE_KEY);
+                console.log('Raw stored data:', stored);
+                
+                if (stored === null) {
+                    console.log('📭 No submissions found in storage - this is normal for first time');
+                    submissions = [];
+                    filteredSubmissions = [];
+                } else {
+                    // Try to parse the JSON
+                    submissions = JSON.parse(stored);
+                    
+                    // Validate that it's an array
+                    if (!Array.isArray(submissions)) {
+                        console.warn('⚠️ Stored data is not an array, resetting to empty array');
+                        submissions = [];
+                    }
+                    
+                    filteredSubmissions = [...submissions];
+                }
+                
+                console.log(`📊 Successfully loaded ${submissions.length} submissions`);
                 
                 updateStats();
                 displaySubmissions();
                 updateLastSync();
                 
+                // Show success message if we have submissions
+                if (submissions.length > 0) {
+                    showNotification(`Loaded ${submissions.length} submissions successfully`, 'success');
+                }
+                
             } catch (error) {
-                console.error('Error loading submissions:', error);
+                console.error('❌ Error loading submissions:', error);
+                console.log('🔧 Error details:', {
+                    message: error.message,
+                    stack: error.stack,
+                    storageKey: STORAGE_KEY,
+                    localStorageAvailable: typeof(Storage) !== "undefined"
+                });
+                
+                // Reset to empty arrays
                 submissions = [];
                 filteredSubmissions = [];
-                showNotification('Error loading submissions', 'error');
+                
+                // Show detailed error message
+                showNotification(`Error loading submissions: ${error.message}`, 'error');
+                
+                // Display troubleshooting info
+                displayTroubleshootingInfo();
             }
         }
 
-        // ADDED: Real-time updates when storage changes (cross-tab communication)
-        function setupRealtimeUpdates() {
-            // Listen for storage events (when other tabs/windows modify the data)
-            window.addEventListener('storage', function(e) {
-                if (e.key === STORAGE_KEY) {
-                    console.log('📡 Storage updated from another tab/window - refreshing data');
-                    loadSubmissions();
-                    showNotification('New submissions detected! Data refreshed.', 'success');
-                }
-            });
-            
-            // Also check for updates periodically (in case storage event doesn't fire)
-            setInterval(() => {
-                const currentCount = submissions.length;
-                const stored = localStorage.getItem(STORAGE_KEY);
-                const storedSubmissions = stored ? JSON.parse(stored) : [];
-                
-                if (storedSubmissions.length !== currentCount) {
-                    console.log('📡 Periodic check detected new submissions - refreshing');
-                    loadSubmissions();
-                    showNotification(`${storedSubmissions.length - currentCount} new submissions detected!`, 'success');
-                }
-            }, 10000); // Check every 10 seconds
-        }
-
-        // ENHANCED: Display submissions with better formatting
-        function displaySubmissions() {
+        // ADDED: Display troubleshooting information
+        function displayTroubleshootingInfo() {
             const container = document.getElementById('submissionsContainer');
-            const currentPage = parseInt(document.getElementById('currentPage').textContent);
-            const itemsPerPage = parseInt(document.getElementById('itemsPerPage').value);
             
-            if (filteredSubmissions.length === 0) {
-                container.innerHTML = `
-                    <div class="no-submissions">
-                        <div class="no-submissions-icon">📭</div>
-                        <h3>No Contact Submissions Found</h3>
-                        <p>Submissions will appear here when visitors use your contact form.</p>
-                        <div class="troubleshooting">
-                            <h4>Troubleshooting:</h4>
-                            <ul>
-                                <li>✅ Make sure the contact form is using the same storage system</li>
-                                <li>✅ Check if submissions exist: <code>localStorage.getItem('contactFormSubmissions')</code></li>
-                                <li>✅ Try submitting a test form from your main website</li>
-                                <li>✅ Verify that JavaScript is enabled on the contact form page</li>
-                            </ul>
-                        </div>
-                    </div>`;
-                return;
+            // Check what's actually in localStorage
+            const allKeys = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                allKeys.push(localStorage.key(i));
             }
-
-            const startIndex = (currentPage - 1) * itemsPerPage;
-            const endIndex = startIndex + itemsPerPage;
-            const pageSubmissions = filteredSubmissions.slice(startIndex, endIndex);
-
-            container.innerHTML = pageSubmissions.map(submission => {
-                const date = new Date(submission.timestamp);
-                const formattedDate = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
-                
-                return `
-                    <div class="submission-card" data-id="${submission.id}">
-                        <div class="submission-header">
-                            <div class="submission-info">
-                                <h3 class="submission-name">${escapeHtml(submission.name)}</h3>
-                                <span class="submission-email">📧 ${escapeHtml(submission.email)}</span>
-                                <span class="submission-date">🕒 ${formattedDate}</span>
-                            </div>
-                            <div class="submission-actions">
-                                <button class="action-btn reply-btn" onclick="replyToSubmission('${submission.id}')" title="Reply">
-                                    📧 Reply
-                                </button>
-                                <button class="action-btn delete-btn" onclick="deleteSubmission('${submission.id}')" title="Delete">
-                                    🗑️ Delete
-                                </button>
-                            </div>
-                        </div>
-                        
-                        <div class="submission-body">
-                            <div class="submission-subject">
-                                <strong>Subject:</strong> ${escapeHtml(submission.subject || 'No subject')}
-                            </div>
-                            <div class="submission-message">
-                                <strong>Message:</strong>
-                                <div class="message-content">${escapeHtml(submission.message).replace(/\n/g, '<br>')}</div>
-                            </div>
-                        </div>
-
-                        <div class="submission-footer">
-                            <div class="submission-meta">
-                                <span>🌐 ${escapeHtml(submission.deviceInfo?.platform || 'Unknown platform')}</span>
-                                <span>📱 ${submission.deviceInfo?.screen || 'Unknown screen'}</span>
-                                <span>🔗 ${escapeHtml(submission.referrer || 'Direct')}</span>
-                            </div>
-                        </div>
-                    </div>`;
-            }).join('');
-
-            updatePagination();
+            
+            container.innerHTML = `
+                <div class="troubleshooting-panel">
+                    <div class="error-icon">⚠️</div>
+                    <h3>Error Loading Submissions</h3>
+                    <p>There was an error loading your contact form submissions. Here's some diagnostic information:</p>
+                    
+                    <div class="diagnostic-info">
+                        <h4>🔍 Diagnostic Information:</h4>
+                        <ul>
+                            <li><strong>Storage Key:</strong> <code>${STORAGE_KEY}</code></li>
+                            <li><strong>LocalStorage Available:</strong> ${typeof(Storage) !== "undefined" ? '✅ Yes' : '❌ No'}</li>
+                            <li><strong>Total LocalStorage Items:</strong> ${localStorage.length}</li>
+                            <li><strong>All Storage Keys:</strong> ${allKeys.length > 0 ? allKeys.join(', ') : 'None'}</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="troubleshooting-steps">
+                        <h4>🛠️ Troubleshooting Steps:</h4>
+                        <ol>
+                            <li><strong>Check Contact Form:</strong> Make sure your main website has the contact form JavaScript loaded</li>
+                            <li><strong>Test Form Submission:</strong> Try submitting a test message from your main website</li>
+                            <li><strong>Check Browser Console:</strong> Look for any JavaScript errors on your main website</li>
+                            <li><strong>Verify Script Loading:</strong> Ensure <code>assets/js/contact-form.js</code> is loaded</li>
+                        </ol>
+                    </div>
+                    
+                    <div class="quick-actions">
+                        <h4>⚡ Quick Actions:</h4>
+                        <button onclick="testLocalStorage()" class="btn btn-primary">Test LocalStorage</button>
+                        <button onclick="createTestSubmission()" class="btn btn-secondary">Create Test Submission</button>
+                        <button onclick="location.reload()" class="btn btn-info">Refresh Page</button>
+                    </div>
+                    
+                    <div class="contact-form-check">
+                        <h4>📋 Contact Form Status:</h4>
+                        <p>Expected JavaScript file: <code>assets/js/contact-form.js</code></p>
+                        <p>Make sure this script is included in your main HTML file before the closing &lt;/body&gt; tag:</p>
+                        <pre>&lt;script src="assets/js/contact-form.js"&gt;&lt;/script&gt;</pre>
+                    </div>
+                </div>`;
         }
 
-        // ADDED: Delete submission function
-        function deleteSubmission(id) {
-            if (!confirm('Are you sure you want to delete this submission? This action cannot be undone.')) {
-                return;
-            }
-
+        // ADDED: Test localStorage function
+        function testLocalStorage() {
             try {
-                // Remove from submissions array
-                submissions = submissions.filter(sub => sub.id !== id);
-                filteredSubmissions = filteredSubmissions.filter(sub => sub.id !== id);
+                const testKey = 'test_' + Date.now();
+                const testData = { message: 'Test data', timestamp: new Date().toISOString() };
                 
-                // Update localStorage
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(submissions));
+                // Test write
+                localStorage.setItem(testKey, JSON.stringify(testData));
                 
-                // Refresh display
-                displaySubmissions();
-                updateStats();
+                // Test read
+                const retrieved = JSON.parse(localStorage.getItem(testKey));
                 
-                showNotification('Submission deleted successfully', 'success');
+                // Clean up
+                localStorage.removeItem(testKey);
                 
-                // Trigger storage event for other tabs
-                window.dispatchEvent(new StorageEvent('storage', {
-                    key: STORAGE_KEY,
-                    newValue: JSON.stringify(submissions),
-                    url: window.location.href
-                }));
+                showNotification('✅ LocalStorage test passed - storage is working correctly', 'success');
+                console.log('✅ LocalStorage test successful:', retrieved);
                 
             } catch (error) {
-                console.error('Error deleting submission:', error);
-                showNotification('Error deleting submission', 'error');
+                showNotification(`❌ LocalStorage test failed: ${error.message}`, 'error');
+                console.error('❌ LocalStorage test failed:', error);
             }
         }
 
-        // ADDED: Reply to submission function
-        function replyToSubmission(id) {
-            const submission = submissions.find(sub => sub.id === id);
-            if (!submission) {
-                showNotification('Submission not found', 'error');
-                return;
-            }
-
-            // Create mailto link with pre-filled information
-            const subject = `Re: ${submission.subject || 'Your contact form message'}`;
-            const body = `Hi ${submission.name},\n\nThank you for contacting me through my website.\n\n---\nOriginal message:\nSubject: ${submission.subject}\nMessage: ${submission.message}\nSent: ${new Date(submission.timestamp).toLocaleString()}\n---\n\n`;
-            
-            const mailtoLink = `mailto:${submission.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-            
-            // Open email client
-            window.location.href = mailtoLink;
-            
-            showNotification('Opening email client...', 'info');
-        }
-
-        // Load contact form utils (same as before)
-        if (typeof ContactFormUtils === 'undefined') {
-            window.ContactFormUtils = {
-                getStoredSubmissions: function() {
-                    return JSON.parse(localStorage.getItem('contactFormSubmissions') || '[]');
-                },
-                exportSubmissions: function() {
-                    const submissions = this.getStoredSubmissions();
-                    const csv = this.convertToCSV(submissions);
-                    this.downloadCSV(csv, 'contact-form-submissions.csv');
-                },
-                convertToCSV: function(submissions) {
-                    if (submissions.length === 0) return '';
-                    
-                    const headers = ['Timestamp', 'Name', 'Email', 'Subject', 'Message'];
-                    const csvContent = [
-                        headers.join(','),
-                        ...submissions.map(sub => [
-                            sub.timestamp,
-                            `"${sub.name || ''}"`,
-                            sub.email || '',
-                            `"${sub.subject || ''}"`,
-                            `"${(sub.message || '').replace(/"/g, '""')}"`
-                        ].join(','))
-                    ].join('\n');
-                    
-                    return csvContent;
-                },
-                downloadCSV: function(csv, filename) {
-                    const blob = new Blob([csv], { type: 'text/csv' });
-                    const url = window.URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.setAttribute('hidden', '');
-                    a.setAttribute('href', url);
-                    a.setAttribute('download', filename);
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                },
-                clearSubmissions: function() {
-                    if (confirm('Are you sure you want to clear all stored submissions?')) {
-                        localStorage.removeItem('contactFormSubmissions');
-                        alert('All submissions cleared.');
-                        return true;
+        // ADDED: Create test submission
+        function createTestSubmission() {
+            try {
+                const testSubmission = {
+                    id: 'test_' + Date.now(),
+                    timestamp: new Date().toISOString(),
+                    name: 'Test User',
+                    email: 'test@example.com',
+                    subject: 'Test Submission',
+                    message: 'This is a test submission created from the admin panel to verify the system is working.',
+                    userAgent: navigator.userAgent,
+                    referrer: 'Admin Panel Test',
+                    deviceInfo: {
+                        screen: `${screen.width}x${screen.height}`,
+                        platform: navigator.platform,
+                        language: navigator.language
                     }
-                    return false;
-                }
-            };
-        }
-
-        // Data management functions (same as before)
-        function refreshData() {
-            allSubmissions = ContactFormUtils.getStoredSubmissions();
-            updateStats();
-            displaySubmissions(allSubmissions);
-        }
-
-        function updateStats() {
-            const total = allSubmissions.length;
-            const today = new Date().toDateString();
-            const oneWeekAgo = new Date();
-            oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-
-            const todayCount = allSubmissions.filter(sub => 
-                new Date(sub.timestamp).toDateString() === today
-            ).length;
-
-            const thisWeekCount = allSubmissions.filter(sub => 
-                new Date(sub.timestamp) >= oneWeekAgo
-            ).length;
-
-            document.getElementById('totalSubmissions').textContent = total;
-            document.getElementById('todaySubmissions').textContent = todayCount;
-            document.getElementById('thisWeekSubmissions').textContent = thisWeekCount;
-        }
-
-        function displaySubmissions(submissions) {
-            const container = document.getElementById('submissionsContainer');
-            
-            if (submissions.length === 0) {
-                container.innerHTML = '<div class="no-data">No submissions found.</div>';
-                return;
-            }
-
-            const table = document.createElement('table');
-            table.className = 'submissions-table';
-            
-            table.innerHTML = `
-                <thead>
-                    <tr>
-                        <th>Date & Time</th>
-                        <th>Name</th>
-                        <th>Email</th>
-                        <th>Subject</th>
-                        <th>Message</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${submissions.map(sub => `
-                        <tr>
-                            <td class="timestamp">${formatDateTime(sub.timestamp)}</td>
-                            <td>${escapeHtml(sub.name || '')}</td>
-                            <td><a href="mailto:${escapeHtml(sub.email || '')}">${escapeHtml(sub.email || '')}</a></td>
-                            <td>${escapeHtml(sub.subject || '')}</td>
-                            <td class="message-cell" title="${escapeHtml(sub.message || '')}">${escapeHtml(sub.message || '')}</td>
-                        </tr>
-                    `).join('')}
-                </tbody>
-            `;
-            
-            container.innerHTML = '';
-            container.appendChild(table);
-        }
-
-        function formatDateTime(timestamp) {
-            return new Date(timestamp).toLocaleString();
-        }
-
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-
-        function filterSubmissions() {
-            const searchTerm = document.getElementById('searchBox').value.toLowerCase();
-            
-            const filtered = allSubmissions.filter(sub => 
-                (sub.name || '').toLowerCase().includes(searchTerm) ||
-                (sub.email || '').toLowerCase().includes(searchTerm) ||
-                (sub.subject || '').toLowerCase().includes(searchTerm) ||
-                (sub.message || '').toLowerCase().includes(searchTerm)
-            );
-            
-            displaySubmissions(filtered);
-        }
-
-        function exportSubmissions() {
-            if (allSubmissions.length === 0) {
-                alert('No submissions to export.');
-                return;
-            }
-            
-            ContactFormUtils.exportSubmissions();
-        }
-
-        function clearSubmissions() {
-            if (ContactFormUtils.clearSubmissions()) {
-                refreshData();
+                };
+                
+                // Get existing submissions
+                let submissions = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+                
+                // Add test submission
+                submissions.unshift(testSubmission);
+                
+                // Save back to localStorage
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(submissions));
+                
+                showNotification('✅ Test submission created successfully', 'success');
+                
+                // Reload data
+                loadSubmissions();
+                
+            } catch (error) {
+                showNotification(`❌ Failed to create test submission: ${error.message}`, 'error');
+                console.error('❌ Test submission creation failed:', error);
             }
         }
 
-        // Access logs functionality
-        function showAccessLogs() {
-            const modal = document.getElementById('accessLogsModal');
-            const content = document.getElementById('accessLogsContent');
-            const logs = JSON.parse(localStorage.getItem('adminAccessLogs') || '[]');
-            
-            if (logs.length === 0) {
-                content.innerHTML = '<p>No access logs found.</p>';
-            } else {
-                const table = `
-                    <table class="submissions-table">
-                        <thead>
-                            <tr>
-                                <th>Timestamp</th>
-                                <th>Method/Action</th>
-                                <th>Success</th>
-                                <th>Device ID</th>
-                                <th>Extra Info</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${logs.slice(-50).reverse().map(log => `
-                                <tr>
-                                    <td>${new Date(log.timestamp).toLocaleString()}</td>
-                                    <td>${log.method || log.action || 'Unknown'}</td>
-                                    <td>${log.success ? '✅' : '❌'}</td>
-                                    <td>${log.deviceFingerprint ? log.deviceFingerprint.slice(0, 8) + '...' : 'N/A'}</td>
-                                    <td>${log.extra || ''}</td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                `;
-                content.innerHTML = table;
-            }
-            
-            modal.style.display = 'block';
-        }
+                // ENHANCED: Storage key constant (make sure it matches contact form)
+        //        const STORAGE_KEY = 'contactFormSubmissions';
 
-        // Modal close functionality
-        document.querySelector('.close').onclick = function() {
-            document.getElementById('accessLogsModal').style.display = 'none';
-        }
-
-        window.onclick = function(event) {
-            const modal = document.getElementById('accessLogsModal');
-            if (event.target === modal) {
-                modal.style.display = 'none';
+        // ADDED: Debug function to check what's in storage
+        function debugStorage() {
+            console.log('🔍 STORAGE DEBUG INFO:');
+            console.log('Storage Key:', STORAGE_KEY);
+            console.log('Raw Data:', localStorage.getItem(STORAGE_KEY));
+            console.log('All localStorage keys:', Object.keys(localStorage));
+            
+            try {
+                const data = JSON.parse(localStorage.getItem(STORAGE_KEY));
+                console.log('Parsed Data:', data);
+                console.log('Is Array:', Array.isArray(data));
+                console.log('Length:', data ? data.length : 0);
+            } catch (e) {
+                console.log('Parse Error:', e.message);
             }
         }
 
-        // Initialize
+        // Make debug function available globally
+        window.debugStorage = debugStorage;
+
+        // ENHANCED: Initialize with better error handling
         document.addEventListener('DOMContentLoaded', function() {
-            if (checkAuthentication()) {
-                refreshData();
-                // Auto-refresh every 30 seconds
-                setInterval(refreshData, 30000);
-            }
-        });
-
-        // Prevent back button access after logout
-        window.addEventListener('pageshow', function(event) {
-            if (event.persisted) {
+            console.log('🔐 Admin panel initializing...');
+            
+            // Debug storage first
+            debugStorage();
+            
+            try {
+                // Check authentication
                 checkAuthentication();
+                
+                // Load submissions with error handling
+                loadSubmissions();
+                
+                // Setup real-time updates
+                setupRealtimeUpdates();
+                
+                // Setup search functionality
+                const searchInput = document.getElementById('searchInput');
+                if (searchInput) {
+                    searchInput.addEventListener('input', function() {
+                        setTimeout(applyFilters, 300); // Debounce search
+                    });
+                }
+                
+                // Setup other event listeners
+                setupEventListeners();
+                
+                console.log('✅ Admin panel initialized successfully');
+                
+            } catch (error) {
+                console.error('❌ Admin panel initialization failed:', error);
+                showNotification(`Initialization error: ${error.message}`, 'error');
             }
         });
-
-        // ADDED: Show notification function
-        function showNotification(message, type = 'info') {
-            // Remove existing notifications
-            const existingNotifications = document.querySelectorAll('.notification');
-            existingNotifications.forEach(n => n.remove());
-            
-            // Create new notification
-            const notification = document.createElement('div');
-            notification.className = `notification notification-${type}`;
-            notification.textContent = message;
-            notification.style.cssText = `
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                padding: 15px 20px;
-                border-radius: 5px;
-                color: white;
-                font-weight: 500;
-                z-index: 10000;
-                max-width: 300px;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-                animation: slideIn 0.3s ease-out;
-            `;
-            
-            // Set background color based on type
-            switch (type) {
-                case 'success':
-                    notification.style.background = '#28a745';
-                    break;
-                case 'error':
-                    notification.style.background = '#dc3545';
-                    break;
-                case 'warning':
-                    notification.style.background = '#ffc107';
-                    notification.style.color = '#000';
-                    break;
-                default:
-                    notification.style.background = '#17a2b8';
-            }
-            
-            document.body.appendChild(notification);
-            
-            // Auto-remove after 4 seconds
-            setTimeout(() => {
-                if (notification.parentNode) {
-                    notification.style.animation = 'slideOut 0.3s ease-out forwards';
-                    setTimeout(() => notification.remove(), 300);
-                }
-            }, 4000);
-        }
-
-        // Add CSS for animations
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes slideIn {
-                from { transform: translateX(100%); opacity: 0; }
-                to { transform: translateX(0); opacity: 1; }
-            }
-            
-            @keyframes slideOut {
-                from { transform: translateX(0); opacity: 1; }
-                to { transform: translateX(100%); opacity: 0; }
-            }
-        `;
-        document.head.appendChild(style);
-
-        // Load submissions on page load
-        loadSubmissions();
     </script>
 </body>
 </html>
