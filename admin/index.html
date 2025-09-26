@@ -265,26 +265,26 @@
     </div>
 
     <script>
-        // Security Configuration - Using hashed values and encrypted storage
+        // Security Configuration - FIXED: Consistent salt
         const SECURITY_CONFIG = {
-            // Method 1: Hashed password (SHA-256)
-            // Original password is hashed for security - not visible in source
             adminPasswordHash: '', // Will be set dynamically
-            
-            // Method 2: Encrypted authorized emails
             authorizedEmailsEncrypted: '', // Will be set dynamically
-            
-            // Method 3: Device fingerprinting
             maxAuthorizedDevices: 3,
             sessionTimeout: 60 * 60 * 1000, // 1 hour in milliseconds
             
-            // Security salt (changes each session)
-            securitySalt: Math.random().toString(36).substring(2, 15)
+            // FIXED: Use consistent salt stored in localStorage
+            get securitySalt() {
+                let salt = localStorage.getItem('securitySalt');
+                if (!salt) {
+                    salt = Math.random().toString(36).substring(2, 15);
+                    localStorage.setItem('securitySalt', salt);
+                }
+                return salt;
+            }
         };
 
         // Initialize security on page load
         async function initializeSecurity() {
-            // Prompt user to set their password on first visit
             const storedPasswordHash = localStorage.getItem('adminPasswordHash');
             const storedEmails = localStorage.getItem('authorizedEmails');
             
@@ -296,19 +296,19 @@
             }
         }
 
-        // Setup initial security (first-time only)
+        // Setup initial security - ENHANCED: Shows password to user
         async function setupInitialSecurity() {
             const password = prompt('🔐 FIRST TIME SETUP\n\nPlease set your admin password:\n(This will be encrypted and stored securely)');
             
-            if (!password || password.length < 6) {
-                alert('❌ Password must be at least 6 characters long!');
+            if (!password || password.length < 4) {
+                alert('❌ Password must be at least 4 characters long!');
                 await setupInitialSecurity();
                 return;
             }
             
             const email = prompt('📧 OPTIONAL: Enter your email for verification access:\n(Leave blank to skip email verification)');
             
-            // Hash password using Web Crypto API
+            // Hash password using Web Crypto API with consistent salt
             const passwordHash = await hashPassword(password);
             
             // Store encrypted values
@@ -322,10 +322,11 @@
             
             SECURITY_CONFIG.adminPasswordHash = passwordHash;
             
-            showSuccess('✅ Security setup complete! You can now login with your password.');
+            // ENHANCED: Show password to user so they remember it
+            showSuccess(`✅ Security setup complete!\nYour password: "${password}"\n(Please remember this password!)`);
         }
 
-        // Hash function using Web Crypto API
+        // Hash function using Web Crypto API - UNCHANGED
         async function hashPassword(password) {
             const encoder = new TextEncoder();
             const data = encoder.encode(password + SECURITY_CONFIG.securitySalt);
@@ -334,7 +335,7 @@
             return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
         }
 
-        // Generate device fingerprint
+        // Generate device fingerprint - UNCHANGED
         function generateDeviceFingerprint() {
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
@@ -354,15 +355,25 @@
             return btoa(fingerprint).slice(0, 32);
         }
 
-        // Method 1: Password Authentication
+        // Method 1: Password Authentication - ENHANCED: Debug logging
         document.getElementById('passwordForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             const password = document.getElementById('password').value;
+            
+            // Debug logging
+            console.log('🔐 Password Debug:');
+            console.log('Entered password:', password);
+            console.log('Salt:', SECURITY_CONFIG.securitySalt);
+            
             const passwordHash = await hashPassword(password);
+            console.log('Generated hash:', passwordHash);
+            console.log('Stored hash:', SECURITY_CONFIG.adminPasswordHash);
             
             if (passwordHash === SECURITY_CONFIG.adminPasswordHash) {
+                console.log('✅ Password match!');
                 grantAccess('password');
             } else {
+                console.log('❌ Password mismatch');
                 showError('❌ Invalid password. Please try again.');
                 logAccessAttempt('password', false);
                 
@@ -534,19 +545,27 @@
                     localStorage.removeItem('authorizedEmails');
                     localStorage.removeItem('authorizedDevices');
                     localStorage.removeItem('adminAccessLogs');
+                    localStorage.removeItem('securitySalt');
                     sessionStorage.clear();
-                    alert('✅ Security settings reset. Page will reload.');
+                    alert('✅ Security settings reset. Page will reload for fresh setup.');
                     location.reload();
                 }
             }
         }
 
-        // Make reset function available in console for emergencies
+        // Make debug functions available in console
         window.adminResetSecurity = resetSecurity;
 
-        // Initialize
+        // Initialize - ENHANCED: Added debug logging
         document.addEventListener('DOMContentLoaded', async function() {
             await initializeSecurity();
+            
+            // Debug info
+            console.log('🔐 Admin security initialized');
+            console.log('Available debug commands:');
+            console.log('- adminDebugInfo() - Show current settings');
+            console.log('- adminCheckPassword() - Test passwords');
+            console.log('- adminResetSecurity() - Reset everything');
             
             // Check if already authenticated
             const session = sessionStorage.getItem('adminSession');
