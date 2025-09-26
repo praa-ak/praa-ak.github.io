@@ -991,6 +991,8 @@
       /* Preloader Deployment Fix - Auto-hide after 3 seconds */
       #preloader {
         animation: preloaderAutoHide 3s forwards;
+        /* Force removal on all devices */
+        z-index: 99999 !important;
       }
       
       @keyframes preloaderAutoHide {
@@ -1001,6 +1003,30 @@
         100% {
           opacity: 0;
           visibility: hidden;
+          display: none;
+        }
+      }
+      
+      /* Desktop-specific layout fixes */
+      @media (min-width: 992px) {
+        body {
+          margin-left: 0 !important;
+          padding-left: 0 !important;
+        }
+        
+        main {
+          margin-left: 0 !important;
+          padding-left: 0 !important;
+        }
+        
+        .header {
+          display: none !important;
+        }
+        
+        /* Ensure preloader doesn't interfere with desktop layout */
+        #preloader {
+          max-width: 100vw;
+          max-height: 100vh;
         }
       }
     </style>
@@ -1863,45 +1889,50 @@
     <script>
       // Immediate preloader removal script for deployment issues
       (function() {
-        // Remove preloader when DOM is ready
-        document.addEventListener('DOMContentLoaded', function() {
+        console.log('Preloader removal script starting...');
+        
+        function forceRemovePreloader() {
           const preloader = document.getElementById('preloader');
           if (preloader) {
+            console.log('Removing preloader...');
+            preloader.style.opacity = '0';
+            preloader.style.visibility = 'hidden';
+            preloader.style.display = 'none';
             setTimeout(function() {
-              preloader.style.opacity = '0';
-              setTimeout(function() {
-                if (preloader.parentNode) {
-                  preloader.parentNode.removeChild(preloader);
-                }
-              }, 300);
+              if (preloader.parentNode) {
+                preloader.parentNode.removeChild(preloader);
+                console.log('Preloader removed from DOM');
+              }
             }, 100);
           }
+        }
+        
+        // Detect if it's a desktop browser
+        const isDesktop = window.innerWidth >= 992 && !('ontouchstart' in window || navigator.maxTouchPoints > 0);
+        console.log('Is Desktop:', isDesktop, 'Window width:', window.innerWidth);
+        
+        // For desktop browsers, be more aggressive
+        if (isDesktop) {
+          console.log('Desktop detected - aggressive preloader removal');
+          setTimeout(forceRemovePreloader, 100); // Almost immediate removal
+        }
+        
+        // Remove preloader when DOM is ready
+        document.addEventListener('DOMContentLoaded', function() {
+          console.log('DOM Content Loaded');
+          setTimeout(forceRemovePreloader, isDesktop ? 200 : 500);
         });
         
         // Failsafe: Remove after 2 seconds no matter what
         setTimeout(function() {
-          const preloader = document.getElementById('preloader');
-          if (preloader && preloader.parentNode) {
-            preloader.style.opacity = '0';
-            setTimeout(function() {
-              if (preloader.parentNode) {
-                preloader.parentNode.removeChild(preloader);
-              }
-            }, 300);
-          }
+          console.log('Failsafe preloader removal');
+          forceRemovePreloader();
         }, 2000);
         
         // Remove on window load as well
         window.addEventListener('load', function() {
-          const preloader = document.getElementById('preloader');
-          if (preloader && preloader.parentNode) {
-            preloader.style.opacity = '0';
-            setTimeout(function() {
-              if (preloader.parentNode) {
-                preloader.parentNode.removeChild(preloader);
-              }
-            }, 300);
-          }
+          console.log('Window Load event');
+          forceRemovePreloader();
         });
       })();
     </script>

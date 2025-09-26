@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Website Debug - Device Detection</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .debug-box {
+            background: white;
+            padding: 20px;
+            margin: 10px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 4px; overflow-x: auto; }
+        .test-btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-btn:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+    <h1>Website Debugging Tool</h1>
+    
+    <div class="debug-box">
+        <h3>Device Information</h3>
+        <div id="device-info"></div>
+    </div>
+
+    <div class="debug-box">
+        <h3>Browser Capabilities</h3>
+        <div id="browser-info"></div>
+    </div>
+
+    <div class="debug-box">
+        <h3>CSS Support Tests</h3>
+        <div id="css-tests"></div>
+    </div>
+
+    <div class="debug-box">
+        <h3>JavaScript Tests</h3>
+        <div id="js-tests"></div>
+        <button class="test-btn" onclick="testPreloader()">Test Preloader Logic</button>
+        <button class="test-btn" onclick="testAssetLoading()">Test Asset Loading</button>
+    </div>
+
+    <div class="debug-box">
+        <h3>Network Tests</h3>
+        <div id="network-tests"></div>
+        <button class="test-btn" onclick="testCSSFiles()">Test CSS Files</button>
+        <button class="test-btn" onclick="testJSFiles()">Test JS Files</button>
+    </div>
+
+    <div class="debug-box">
+        <h3>Console Logs</h3>
+        <pre id="console-output"></pre>
+        <button class="test-btn" onclick="clearConsole()">Clear</button>
+    </div>
+
+    <script>
+        // Capture console logs
+        let consoleOutput = '';
+        const originalLog = console.log;
+        const originalError = console.error;
+        const originalWarn = console.warn;
+        
+        console.log = function(...args) {
+            consoleOutput += 'LOG: ' + args.join(' ') + '\n';
+            document.getElementById('console-output').textContent = consoleOutput;
+            originalLog.apply(console, args);
+        };
+        
+        console.error = function(...args) {
+            consoleOutput += 'ERROR: ' + args.join(' ') + '\n';
+            document.getElementById('console-output').textContent = consoleOutput;
+            originalError.apply(console, args);
+        };
+        
+        console.warn = function(...args) {
+            consoleOutput += 'WARN: ' + args.join(' ') + '\n';
+            document.getElementById('console-output').textContent = consoleOutput;
+            originalWarn.apply(console, args);
+        };
+
+        function addStatus(containerId, message, type = 'info') {
+            const container = document.getElementById(containerId);
+            const status = document.createElement('div');
+            status.className = `status ${type}`;
+            status.innerHTML = message;
+            container.appendChild(status);
+        }
+
+        function clearConsole() {
+            consoleOutput = '';
+            document.getElementById('console-output').textContent = '';
+        }
+
+        // Device Information
+        function detectDevice() {
+            const info = {
+                userAgent: navigator.userAgent,
+                platform: navigator.platform,
+                screenSize: `${screen.width}x${screen.height}`,
+                viewportSize: `${window.innerWidth}x${window.innerHeight}`,
+                devicePixelRatio: window.devicePixelRatio,
+                touchSupport: 'ontouchstart' in window || navigator.maxTouchPoints > 0,
+                mobile: /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent),
+                OS: getOS(),
+                browser: getBrowser()
+            };
+            
+            let html = '';
+            for (const [key, value] of Object.entries(info)) {
+                html += `<strong>${key}:</strong> ${value}<br>`;
+            }
+            document.getElementById('device-info').innerHTML = html;
+            
+            console.log('Device Info:', info);
+        }
+
+        function getOS() {
+            const userAgent = navigator.userAgent;
+            if (userAgent.includes('Windows')) return 'Windows';
+            if (userAgent.includes('Mac')) return 'macOS';
+            if (userAgent.includes('Linux')) return 'Linux';
+            if (userAgent.includes('Android')) return 'Android';
+            if (userAgent.includes('iOS')) return 'iOS';
+            return 'Unknown';
+        }
+
+        function getBrowser() {
+            const userAgent = navigator.userAgent;
+            if (userAgent.includes('Chrome')) return 'Chrome';
+            if (userAgent.includes('Firefox')) return 'Firefox';
+            if (userAgent.includes('Safari')) return 'Safari';
+            if (userAgent.includes('Edge')) return 'Edge';
+            return 'Unknown';
+        }
+
+        // Browser Capabilities
+        function testBrowserCapabilities() {
+            const tests = {
+                'CSS Grid': CSS.supports('display', 'grid'),
+                'CSS Flexbox': CSS.supports('display', 'flex'),
+                'CSS Variables': CSS.supports('color', 'var(--test)'),
+                'CSS Animations': CSS.supports('animation-name', 'test'),
+                'Local Storage': 'localStorage' in window,
+                'Session Storage': 'sessionStorage' in window,
+                'Geolocation': 'geolocation' in navigator,
+                'Service Workers': 'serviceWorker' in navigator,
+                'WebGL': !!window.WebGLRenderingContext,
+                'ES6 Classes': typeof class {} === 'function',
+                'Arrow Functions': (() => true)(),
+                'Promises': typeof Promise === 'function',
+                'Fetch API': 'fetch' in window
+            };
+
+            let html = '';
+            for (const [test, result] of Object.entries(tests)) {
+                const status = result ? 'success' : 'error';
+                const icon = result ? '✅' : '❌';
+                html += `<div class="status ${status}">${icon} ${test}: ${result}</div>`;
+            }
+            document.getElementById('browser-info').innerHTML = html;
+        }
+
+        // CSS Tests
+        function testCSSSupport() {
+            const cssTests = [
+                'backdrop-filter: blur(10px)',
+                'transform: translateY(-50%)',
+                'transition: all 0.3s ease',
+                'box-shadow: 0 4px 15px rgba(0,0,0,0.1)',
+                'border-radius: 10px',
+                'opacity: 0.5',
+                'z-index: 9999',
+                'position: fixed',
+                'display: flex',
+                'align-items: center'
+            ];
+
+            let html = '';
+            cssTests.forEach(test => {
+                const [property, value] = test.split(': ');
+                const supported = CSS.supports(property, value);
+                const status = supported ? 'success' : 'error';
+                const icon = supported ? '✅' : '❌';
+                html += `<div class="status ${status}">${icon} ${test}: ${supported}</div>`;
+            });
+            document.getElementById('css-tests').innerHTML = html;
+        }
+
+        // JavaScript Tests
+        function testJavaScript() {
+            const tests = [];
+            
+            // Test DOM manipulation
+            try {
+                const testDiv = document.createElement('div');
+                testDiv.style.display = 'none';
+                document.body.appendChild(testDiv);
+                document.body.removeChild(testDiv);
+                tests.push({ name: 'DOM Manipulation', result: true });
+            } catch (e) {
+                tests.push({ name: 'DOM Manipulation', result: false, error: e.message });
+            }
+
+            // Test Event Listeners
+            try {
+                const testFunc = () => {};
+                window.addEventListener('test', testFunc);
+                window.removeEventListener('test', testFunc);
+                tests.push({ name: 'Event Listeners', result: true });
+            } catch (e) {
+                tests.push({ name: 'Event Listeners', result: false, error: e.message });
+            }
+
+            // Test Query Selectors
+            try {
+                document.querySelector('body');
+                document.querySelectorAll('div');
+                tests.push({ name: 'Query Selectors', result: true });
+            } catch (e) {
+                tests.push({ name: 'Query Selectors', result: false, error: e.message });
+            }
+
+            let html = '';
+            tests.forEach(test => {
+                const status = test.result ? 'success' : 'error';
+                const icon = test.result ? '✅' : '❌';
+                const error = test.error ? ` (Error: ${test.error})` : '';
+                html += `<div class="status ${status}">${icon} ${test.name}: ${test.result}${error}</div>`;
+            });
+            document.getElementById('js-tests').innerHTML = html;
+        }
+
+        // Preloader Test
+        function testPreloader() {
+            console.log('Testing preloader logic...');
+            
+            // Create a test preloader
+            const testPreloader = document.createElement('div');
+            testPreloader.id = 'test-preloader';
+            testPreloader.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0,0,0,0.8);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 99999;
+                color: white;
+                font-size: 24px;
+            `;
+            testPreloader.textContent = 'Test Preloader';
+            document.body.appendChild(testPreloader);
+            
+            console.log('Test preloader created');
+            
+            // Test removal after 2 seconds
+            setTimeout(() => {
+                if (testPreloader.parentNode) {
+                    testPreloader.parentNode.removeChild(testPreloader);
+                    console.log('Test preloader removed successfully');
+                    addStatus('js-tests', '✅ Preloader removal test: SUCCESS', 'success');
+                } else {
+                    console.log('Test preloader already removed');
+                    addStatus('js-tests', '❌ Preloader removal test: FAILED', 'error');
+                }
+            }, 2000);
+        }
+
+        // Asset Loading Test
+        function testAssetLoading() {
+            console.log('Testing asset loading...');
+            
+            const assets = [
+                'assets/css/main.css',
+                'assets/js/main.js',
+                'assets/vendor/bootstrap/css/bootstrap.min.css'
+            ];
+            
+            assets.forEach(asset => {
+                fetch(asset)
+                    .then(response => {
+                        if (response.ok) {
+                            console.log(`✅ ${asset} loaded successfully`);
+                            addStatus('js-tests', `✅ ${asset}: OK`, 'success');
+                        } else {
+                            console.error(`❌ ${asset} failed to load: ${response.status}`);
+                            addStatus('js-tests', `❌ ${asset}: ${response.status}`, 'error');
+                        }
+                    })
+                    .catch(error => {
+                        console.error(`❌ ${asset} error: ${error.message}`);
+                        addStatus('js-tests', `❌ ${asset}: ${error.message}`, 'error');
+                    });
+            });
+        }
+
+        // Network Tests
+        function testCSSFiles() {
+            const cssFiles = [
+                'assets/css/main.css',
+                'assets/vendor/bootstrap/css/bootstrap.min.css',
+                'assets/vendor/bootstrap-icons/bootstrap-icons.css',
+                'assets/vendor/aos/aos.css'
+            ];
+            
+            testFileLoading(cssFiles, 'network-tests');
+        }
+
+        function testJSFiles() {
+            const jsFiles = [
+                'assets/js/main.js',
+                'assets/vendor/bootstrap/js/bootstrap.bundle.min.js',
+                'assets/vendor/aos/aos.js'
+            ];
+            
+            testFileLoading(jsFiles, 'network-tests');
+        }
+
+        function testFileLoading(files, containerId) {
+            files.forEach(file => {
+                fetch(file)
+                    .then(response => {
+                        if (response.ok) {
+                            addStatus(containerId, `✅ ${file}: OK (${response.status})`, 'success');
+                        } else {
+                            addStatus(containerId, `❌ ${file}: Failed (${response.status})`, 'error');
+                        }
+                    })
+                    .catch(error => {
+                        addStatus(containerId, `❌ ${file}: Error - ${error.message}`, 'error');
+                    });
+            });
+        }
+
+        // Initialize all tests
+        window.addEventListener('DOMContentLoaded', () => {
+            console.log('Debug page loaded');
+            detectDevice();
+            testBrowserCapabilities();
+            testCSSSupport();
+            testJavaScript();
+        });
+
+        // Also test on window load
+        window.addEventListener('load', () => {
+            console.log('All resources loaded');
+            addStatus('js-tests', '✅ Window load event fired', 'success');
+        });
+    </script>
+</body>
+</html>
