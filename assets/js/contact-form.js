@@ -6,10 +6,10 @@
 
     // Configuration - Replace with your own endpoints
     const STORAGE_CONFIG = {
-        // Option 1: JSONBin.io (Free tier: 10k requests/month)
-        jsonBinApiKey: '$2a$10$6hQy1627U0GJ4mjEwvzUherqYQPLLYChLG27.zpYVnsGmF2o710xu', // Replace with your API key
-        jsonBinBinId: '68d6ecacae596e708ffd09b7', // Replace with your bin ID
-        jsonBinUrl: 'https://api.jsonbin.io/v3/b/68d6ecacae596e708ffd09b7',
+        // JSONBin.io configuration - FIXED
+        jsonBinApiKey: '$2a$10$6hQy1627U0GJ4mjEwvzUherqYQPLLYChLG27.zpYVnsGmF2o710xu',
+        jsonBinBinId: '68d6ecacae596e708ffd09b7',
+        jsonBinUrl: 'https://api.jsonbin.io/v3/b/', // Base URL - FIXED
         
         // Option 2: Firebase Realtime Database (Alternative)
         firebaseUrl: 'https://your-project.firebaseio.com/submissions.json',
@@ -95,7 +95,7 @@
         }
     }
 
-    // Save to cloud storage (JSONBin.io)
+    // Save to cloud storage (JSONBin.io) - FIXED
     async function saveToCloudStorage(submission) {
         try {
             // First, get existing submissions
@@ -110,7 +110,7 @@
                 submissions.splice(1000);
             }
             
-            // Save back to cloud
+            // Save back to cloud - FIXED URL
             const response = await fetch(`${STORAGE_CONFIG.jsonBinUrl}${STORAGE_CONFIG.jsonBinBinId}`, {
                 method: 'PUT',
                 headers: {
@@ -134,7 +134,7 @@
         }
     }
 
-    // Fetch from cloud storage
+    // Fetch from cloud storage - FIXED
     async function fetchFromCloudStorage() {
         try {
             const response = await fetch(`${STORAGE_CONFIG.jsonBinUrl}${STORAGE_CONFIG.jsonBinBinId}/latest`, {

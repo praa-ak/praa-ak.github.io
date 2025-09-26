@@ -370,11 +370,11 @@
     </div>
 
     <script>
-// Cross-Device Admin Panel - Updated to use cloud storage
+// Cross-Device Admin Panel - FIXED JSONBin configuration
 const STORAGE_CONFIG = {
-    jsonBinApiKey: '$2a$10$6hQy1627U0GJ4mjEwvzUherqYQPLLYChLG27.zpYVnsGmF2o710xu', // Same as contact form
-    jsonBinBinId: '68d6ecacae596e708ffd09b7', // Same as contact form
-    jsonBinUrl: 'https://api.jsonbin.io/v3/b/68d6ecacae596e708ffd09b7',
+    jsonBinApiKey: '$2a$10$6hQy1627U0GJ4mjEwvzUherqYQPLLYChLG27.zpYVnsGmF2o710xu',
+    jsonBinBinId: '68d6ecacae596e708ffd09b7',
+    jsonBinUrl: 'https://api.jsonbin.io/v3/b/', // Base URL - FIXED
     localStorageKey: 'contactFormSubmissions'
 };
 
@@ -455,7 +455,7 @@ async function loadSubmissions() {
     }
 }
 
-// Fetch from cloud storage
+// Fetch from cloud storage - FIXED
 async function fetchFromCloudStorage() {
     try {
         const response = await fetch(`${STORAGE_CONFIG.jsonBinUrl}${STORAGE_CONFIG.jsonBinBinId}/latest`, {
@@ -785,7 +785,7 @@ async function createTestSubmission() {
     }
 }
 
-// Save test submission to cloud
+// Save test submission to cloud - FIXED
 async function saveTestToCloudStorage(testSubmission) {
     try {
         const existingData = await fetchFromCloudStorage();
