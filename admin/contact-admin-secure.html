@@ -370,13 +370,19 @@
     </div>
 
     <script>
-// Fixed admin panel JavaScript
-const STORAGE_KEY = 'contactFormSubmissions';
+// Cross-Device Admin Panel - Updated to use cloud storage
+const STORAGE_CONFIG = {
+    jsonBinApiKey: '$2a$10$6hQy1627U0GJ4mjEwvzUherqYQPLLYChLG27.zpYVnsGmF2o710xu', // Same as contact form
+    jsonBinBinId: '68d6ecacae596e708ffd09b7', // Same as contact form
+    jsonBinUrl: 'https://api.jsonbin.io/v3/b/',
+    localStorageKey: 'contactFormSubmissions'
+};
 
 let submissions = [];
 let filteredSubmissions = [];
 let currentPage = 1;
 const itemsPerPage = 10;
+let isCloudAvailable = true;
 
 // Authentication check
 function checkAuthentication() {
@@ -390,7 +396,6 @@ function checkAuthentication() {
         const sessionData = JSON.parse(session);
         const now = Date.now();
         
-        // Check if session is still valid (1 hour timeout)
         if (now - sessionData.timestamp > 60 * 60 * 1000) {
             sessionStorage.removeItem('adminSession');
             window.location.href = 'index.html';
@@ -405,45 +410,139 @@ function checkAuthentication() {
     }
 }
 
-// Load submissions with proper error handling
-function loadSubmissions() {
+// Load submissions from cloud storage first, fallback to localStorage
+async function loadSubmissions() {
     try {
-        console.log('📊 Loading submissions...');
+        console.log('📊 Loading submissions from cloud storage...');
+        showLoadingIndicator(true);
         
-        // Get data from localStorage
-        const stored = localStorage.getItem(STORAGE_KEY);
-        console.log('Raw stored data:', stored);
+        // Try cloud storage first
+        const cloudSubmissions = await fetchFromCloudStorage();
         
-        if (stored === null || stored === 'null' || stored === '') {
-            console.log('📭 No submissions found in storage');
-            submissions = [];
-            filteredSubmissions = [];
+        if (cloudSubmissions && cloudSubmissions.length >= 0) {
+            submissions = cloudSubmissions;
+            isCloudAvailable = true;
+            console.log(`✅ Loaded ${submissions.length} submissions from cloud`);
+            showNotification(`Loaded ${submissions.length} submissions from cloud storage`, 'success');
         } else {
-            submissions = JSON.parse(stored);
-            
-            if (!Array.isArray(submissions)) {
-                console.warn('⚠️ Invalid data format, resetting');
-                submissions = [];
-            }
-            
-            filteredSubmissions = [...submissions];
+            // Fallback to localStorage
+            const localSubmissions = getLocalStorageSubmissions();
+            submissions = localSubmissions;
+            isCloudAvailable = false;
+            console.log(`⚠️ Cloud unavailable, loaded ${submissions.length} from localStorage`);
+            showNotification(`Cloud unavailable. Showing ${submissions.length} local submissions`, 'warning');
         }
         
-        console.log(`✅ Loaded ${submissions.length} submissions`);
+        filteredSubmissions = [...submissions];
         
-        // Update the UI
         updateStats();
         displaySubmissions();
+        updateSyncStatus();
         
     } catch (error) {
         console.error('❌ Error loading submissions:', error);
-        submissions = [];
-        filteredSubmissions = [];
-        displayError('Failed to load submissions: ' + error.message);
+        
+        // Fallback to localStorage
+        submissions = getLocalStorageSubmissions();
+        filteredSubmissions = [...submissions];
+        isCloudAvailable = false;
+        
+        displaySubmissions();
+        updateStats();
+        showNotification('Error connecting to cloud. Showing local data only.', 'error');
+    } finally {
+        showLoadingIndicator(false);
     }
 }
 
-// Display submissions in the UI
+// Fetch from cloud storage
+async function fetchFromCloudStorage() {
+    try {
+        const response = await fetch(`${STORAGE_CONFIG.jsonBinUrl}${STORAGE_CONFIG.jsonBinBinId}/latest`, {
+            headers: {
+                'X-Master-Key': STORAGE_CONFIG.jsonBinApiKey
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+
+        const data = await response.json();
+        return data.record || [];
+        
+    } catch (error) {
+        console.error('❌ Cloud fetch failed:', error);
+        return null;
+    }
+}
+
+// Get localStorage submissions
+function getLocalStorageSubmissions() {
+    try {
+        return JSON.parse(localStorage.getItem(STORAGE_CONFIG.localStorageKey)) || [];
+    } catch (error) {
+        return [];
+    }
+}
+
+// Show loading indicator
+function showLoadingIndicator(show) {
+    let indicator = document.getElementById('loadingIndicator');
+    if (!indicator) {
+        indicator = document.createElement('div');
+        indicator.id = 'loadingIndicator';
+        indicator.innerHTML = `
+            <div style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(255,255,255,0.9); padding: 20px; border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); z-index: 10000;">
+                <div style="text-align: center;">
+                    <div style="border: 4px solid #f3f3f3; border-top: 4px solid #4f46e5; border-radius: 50%; width: 40px; height: 40px; animation: spin 2s linear infinite; margin: 0 auto 15px;"></div>
+                    <p style="margin: 0; color: #333;">Loading submissions...</p>
+                </div>
+            </div>
+            <style>
+                @keyframes spin {
+                    0% { transform: rotate(0deg); }
+                    100% { transform: rotate(360deg); }
+                }
+            </style>
+        `;
+        document.body.appendChild(indicator);
+    }
+    
+    indicator.style.display = show ? 'block' : 'none';
+}
+
+// Update sync status indicator
+function updateSyncStatus() {
+    let statusEl = document.getElementById('syncStatus');
+    if (!statusEl) {
+        statusEl = document.createElement('div');
+        statusEl.id = 'syncStatus';
+        statusEl.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 15px;
+            border-radius: 5px;
+            color: white;
+            font-weight: 500;
+            z-index: 9999;
+            font-size: 14px;
+        `;
+        document.body.appendChild(statusEl);
+    }
+    
+    if (isCloudAvailable) {
+        statusEl.style.background = '#28a745';
+        statusEl.innerHTML = '☁️ Cloud Sync Active';
+    } else {
+        statusEl.style.background = '#ffc107';
+        statusEl.style.color = '#000';
+        statusEl.innerHTML = '📱 Local Mode Only';
+    }
+}
+
+// Display submissions (same as before but with cloud/local indicators)
 function displaySubmissions() {
     const container = document.getElementById('submissionsContainer');
     
@@ -457,23 +556,25 @@ function displaySubmissions() {
             <div style="text-align: center; padding: 40px; background: #f8f9fa; border-radius: 10px; margin: 20px 0;">
                 <div style="font-size: 48px; margin-bottom: 20px;">📭</div>
                 <h3 style="color: #6c757d; margin-bottom: 15px;">No Contact Submissions Found</h3>
-                <p style="color: #6c757d; margin-bottom: 20px;">Submissions will appear here when visitors use your contact form.</p>
+                <p style="color: #6c757d; margin-bottom: 20px;">
+                    ${isCloudAvailable ? 'No submissions in cloud storage.' : 'No local submissions found.'}
+                </p>
                 
                 <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: left;">
                     <h4 style="color: #495057; margin-bottom: 15px;">🔍 Troubleshooting:</h4>
                     <ul style="color: #6c757d; line-height: 1.6;">
-                        <li>✅ Make sure your main website includes the contact form script</li>
                         <li>✅ Try submitting a test message from your main website</li>
-                        <li>✅ Check browser console for any JavaScript errors</li>
-                        <li>✅ Verify that localStorage is enabled in your browser</li>
+                        <li>✅ Check if cloud storage is properly configured</li>
+                        <li>✅ Verify internet connection for cloud sync</li>
+                        <li>✅ Check browser console for any errors</li>
                     </ul>
                 </div>
                 
                 <button onclick="createTestSubmission()" class="btn btn-primary" style="margin-right: 10px;">
                     🧪 Create Test Submission
                 </button>
-                <button onclick="debugStorage()" class="btn btn-secondary">
-                    🔍 Debug Storage
+                <button onclick="loadSubmissions()" class="btn btn-secondary">
+                    🔄 Refresh Data
                 </button>
             </div>`;
         return;
@@ -484,27 +585,28 @@ function displaySubmissions() {
     const endIndex = startIndex + itemsPerPage;
     const pageSubmissions = filteredSubmissions.slice(startIndex, endIndex);
     
-    // Display submissions
+    // Display submissions with source indicator
     container.innerHTML = pageSubmissions.map(submission => {
         const date = new Date(submission.timestamp);
         const formattedDate = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
         
+        // Determine submission source
+        const sourceIcon = submission.sessionId ? '☁️' : '📱';
+        const sourceLabel = isCloudAvailable ? 'Cloud' : 'Local';
+        
         return `
-            <div class="submission-card" style="background: white; border-radius: 10px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">
+            <div class="submission-card" style="background: white; border-radius: 10px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); position: relative;">
+                <div style="position: absolute; top: 15px; right: 15px; background: ${isCloudAvailable ? '#28a745' : '#6c757d'}; color: white; padding: 4px 8px; border-radius: 12px; font-size: 11px;">
+                    ${sourceIcon} ${sourceLabel}
+                </div>
+                
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px; padding-right: 80px;">
                     <div>
                         <h3 style="margin: 0 0 5px 0; color: #2c3e50;">${escapeHtml(submission.name)}</h3>
                         <div style="color: #6c757d; font-size: 14px;">
                             📧 ${escapeHtml(submission.email)} | 🕒 ${formattedDate}
                         </div>
-                    </div>
-                    <div>
-                        <button onclick="replyToSubmission('${submission.id}')" style="background: #007bff; color: white; border: none; padding: 8px 12px; border-radius: 5px; margin-right: 5px; cursor: pointer;">
-                            📧 Reply
-                        </button>
-                        <button onclick="deleteSubmission('${submission.id}')" style="background: #dc3545; color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer;">
-                            🗑️ Delete
-                        </button>
+                        ${submission.deviceInfo?.browser ? `<div style="color: #adb5bd; font-size: 12px;">🌐 ${submission.deviceInfo.browser} | ${submission.deviceInfo.platform || 'Unknown'}</div>` : ''}
                     </div>
                 </div>
                 
@@ -519,10 +621,13 @@ function displaySubmissions() {
                     </div>
                 </div>
                 
-                <div style="font-size: 12px; color: #adb5bd; border-top: 1px solid #dee2e6; padding-top: 10px;">
-                    🖥️ ${escapeHtml(submission.deviceInfo?.platform || 'Unknown')} | 
-                    📱 ${submission.deviceInfo?.screen || 'Unknown'} | 
-                    🔗 ${escapeHtml(submission.referrer || 'Direct')}
+                <div style="display: flex; gap: 10px; margin-top: 15px;">
+                    <button onclick="replyToSubmission('${submission.id}')" style="background: #007bff; color: white; border: none; padding: 8px 16px; border-radius: 5px; cursor: pointer; font-size: 14px;">
+                        📧 Reply
+                    </button>
+                    <button onclick="deleteSubmission('${submission.id}')" style="background: #dc3545; color: white; border: none; padding: 8px 16px; border-radius: 5px; cursor: pointer; font-size: 14px;">
+                        🗑️ Delete
+                    </button>
                 </div>
             </div>`;
     }).join('');
@@ -634,128 +739,108 @@ function displayError(message) {
 }
 
 // Test functions
-function createTestSubmission() {
+async function createTestSubmission() {
     try {
         const testSubmission = {
             id: 'test_' + Date.now(),
             timestamp: new Date().toISOString(),
-            name: 'Test User',
+            name: 'Test User (' + new Date().toLocaleTimeString() + ')',
             email: 'test@example.com',
-            subject: 'Test Submission',
-            message: 'This is a test submission created from the admin panel to verify the system is working properly.',
+            subject: 'Test Submission from Admin Panel',
+            message: 'This is a test submission created from the admin panel to verify cross-device functionality is working properly.',
             userAgent: navigator.userAgent,
             referrer: 'Admin Panel Test',
+            sessionId: 'admin_test_' + Date.now(),
             deviceInfo: {
                 screen: `${screen.width}x${screen.height}`,
                 platform: navigator.platform,
                 language: navigator.language,
+                browser: 'Admin Panel',
                 cookieEnabled: navigator.cookieEnabled
             }
         };
         
-        let currentSubmissions = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
-        currentSubmissions.unshift(testSubmission);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(currentSubmissions));
+        // Try to save to cloud storage
+        if (isCloudAvailable) {
+            const success = await saveTestToCloudStorage(testSubmission);
+            if (success) {
+                showNotification('✅ Test submission created in cloud storage!', 'success');
+            } else {
+                // Fallback to localStorage
+                saveTestToLocalStorage(testSubmission);
+                showNotification('⚠️ Cloud failed, test saved locally', 'warning');
+            }
+        } else {
+            // Save to localStorage only
+            saveTestToLocalStorage(testSubmission);
+            showNotification('📱 Test submission saved locally', 'info');
+        }
         
-        alert('✅ Test submission created successfully!');
-        loadSubmissions();
+        // Reload data
+        await loadSubmissions();
         
     } catch (error) {
-        alert('❌ Failed to create test submission: ' + error.message);
+        showNotification('❌ Failed to create test submission: ' + error.message, 'error');
         console.error('Test submission error:', error);
     }
 }
 
-function debugStorage() {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    console.log('=== STORAGE DEBUG ===');
-    console.log('Storage Key:', STORAGE_KEY);
-    console.log('Raw Data:', stored);
-    console.log('Data Length:', stored ? stored.length : 0);
-    console.log('All localStorage keys:', Object.keys(localStorage));
-    
-    alert(`Storage Debug Info:
-Storage Key: ${STORAGE_KEY}
-Has Data: ${stored ? 'Yes' : 'No'}
-Data Length: ${stored ? stored.length : 0} characters
-Total localStorage Items: ${localStorage.length}
-
-Check browser console for detailed logs.`);
-}
-
-function replyToSubmission(id) {
-    const submission = submissions.find(sub => sub.id === id);
-    if (!submission) {
-        alert('❌ Submission not found');
-        return;
-    }
-    
-    const subject = `Re: ${submission.subject || 'Your contact form message'}`;
-    const body = `Hi ${submission.name},
-
-Thank you for contacting me through my website.
-
----
-Original message:
-Subject: ${submission.subject}
-Message: ${submission.message}
-Sent: ${new Date(submission.timestamp).toLocaleString()}
----
-
-`;
-    
-    const mailtoLink = `mailto:${submission.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    window.location.href = mailtoLink;
-}
-
-function deleteSubmission(id) {
-    if (!confirm('Are you sure you want to delete this submission?')) {
-        return;
-    }
-    
+// Save test submission to cloud
+async function saveTestToCloudStorage(testSubmission) {
     try {
-        submissions = submissions.filter(sub => sub.id !== id);
-        filteredSubmissions = filteredSubmissions.filter(sub => sub.id !== id);
+        const existingData = await fetchFromCloudStorage();
+        const submissions = existingData || [];
+        submissions.unshift(testSubmission);
         
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(submissions));
-        
-        alert('✅ Submission deleted successfully');
-        displaySubmissions();
-        updateStats();
+        const response = await fetch(`${STORAGE_CONFIG.jsonBinUrl}${STORAGE_CONFIG.jsonBinBinId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Master-Key': STORAGE_CONFIG.jsonBinApiKey,
+                'X-Bin-Versioning': 'false'
+            },
+            body: JSON.stringify(submissions)
+        });
+
+        return response.ok;
         
     } catch (error) {
-        alert('❌ Failed to delete submission: ' + error.message);
+        console.error('Failed to save test to cloud:', error);
+        return false;
     }
 }
 
-function logout() {
-    if (confirm('Are you sure you want to logout?')) {
-        sessionStorage.removeItem('adminSession');
-        window.location.href = 'index.html';
+// Save test submission to localStorage
+function saveTestToLocalStorage(testSubmission) {
+    try {
+        let submissions = JSON.parse(localStorage.getItem(STORAGE_CONFIG.localStorageKey)) || [];
+        submissions.unshift(testSubmission);
+        localStorage.setItem(STORAGE_CONFIG.localStorageKey, JSON.stringify(submissions));
+    } catch (error) {
+        console.error('Failed to save test locally:', error);
     }
 }
 
-// Initialize when page loads
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('🔐 Admin panel loading...');
+// Initialize with enhanced loading
+document.addEventListener('DOMContentLoaded', async function() {
+    console.log('🔐 Cross-device admin panel loading...');
     
-    // Check authentication first
     if (!checkAuthentication()) {
         return;
     }
     
-    // Load submissions
-    loadSubmissions();
+    // Load submissions from cloud
+    await loadSubmissions();
     
-    // Setup search
-    const searchInput = document.getElementById('searchInput');
-    if (searchInput) {
-        searchInput.addEventListener('input', function() {
-            setTimeout(applyFilters, 300);
-        });
-    }
+    // Setup auto-refresh every 30 seconds for cloud data
+    setInterval(async () => {
+        if (isCloudAvailable) {
+            console.log('🔄 Auto-refreshing from cloud...');
+            await loadSubmissions();
+        }
+    }, 30000);
     
-    console.log('✅ Admin panel initialized');
+    console.log('✅ Cross-device admin panel initialized');
 });
 
 // Make functions available globally
