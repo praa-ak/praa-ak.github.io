@@ -10,21 +10,21 @@
     <link
       rel="apple-touch-icon"
       sizes="180x180"
-      href="/assets/favicon_io/apple-touch-icon.png"
+      href="assets/favicon_io/apple-touch-icon.png"
     />
     <link
       rel="icon"
       type="image/png"
       sizes="32x32"
-      href="/assets/favicon_io/favicon-32x32.png"
+      href="assets/favicon_io/favicon-32x32.png"
     />
     <link
       rel="icon"
       type="image/png"
       sizes="16x16"
-      href="/assets/favicon_io/favicon-16x16.png"
+      href="assets/favicon_io/favicon-16x16.png"
     />
-    <link rel="manifest" href="/assets/favicon_io/site.webmanifest" />
+    <link rel="manifest" href="assets/favicon_io/site.webmanifest" />
 
     <link href="https://fonts.googleapis.com" rel="preconnect" />
     <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin />
@@ -987,6 +987,22 @@
           font-size: 0.8rem;
         }
       }
+      
+      /* Preloader Deployment Fix - Auto-hide after 3 seconds */
+      #preloader {
+        animation: preloaderAutoHide 3s forwards;
+      }
+      
+      @keyframes preloaderAutoHide {
+        0%, 90% {
+          opacity: 1;
+          visibility: visible;
+        }
+        100% {
+          opacity: 0;
+          visibility: hidden;
+        }
+      }
     </style>
 
     <!-- =======================================================
@@ -1841,6 +1857,53 @@
           }
         });
       });
+    </script>
+
+    <!-- Backup Preloader Script (Deployment Fix) -->
+    <script>
+      // Immediate preloader removal script for deployment issues
+      (function() {
+        // Remove preloader when DOM is ready
+        document.addEventListener('DOMContentLoaded', function() {
+          const preloader = document.getElementById('preloader');
+          if (preloader) {
+            setTimeout(function() {
+              preloader.style.opacity = '0';
+              setTimeout(function() {
+                if (preloader.parentNode) {
+                  preloader.parentNode.removeChild(preloader);
+                }
+              }, 300);
+            }, 100);
+          }
+        });
+        
+        // Failsafe: Remove after 2 seconds no matter what
+        setTimeout(function() {
+          const preloader = document.getElementById('preloader');
+          if (preloader && preloader.parentNode) {
+            preloader.style.opacity = '0';
+            setTimeout(function() {
+              if (preloader.parentNode) {
+                preloader.parentNode.removeChild(preloader);
+              }
+            }, 300);
+          }
+        }, 2000);
+        
+        // Remove on window load as well
+        window.addEventListener('load', function() {
+          const preloader = document.getElementById('preloader');
+          if (preloader && preloader.parentNode) {
+            preloader.style.opacity = '0';
+            setTimeout(function() {
+              if (preloader.parentNode) {
+                preloader.parentNode.removeChild(preloader);
+              }
+            }, 300);
+          }
+        });
+      })();
     </script>
 
     <script src="assets/js/main.js"></script>

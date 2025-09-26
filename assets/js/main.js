@@ -10,13 +10,56 @@
   "use strict";
 
   /**
-   * Preloader
+   * Enhanced Preloader with Fallbacks
    */
   const preloader = document.querySelector('#preloader');
   if (preloader) {
+    let preloaderRemoved = false;
+    
+    // Primary: Remove on window load
     window.addEventListener('load', () => {
-      preloader.remove();
+      if (!preloaderRemoved) {
+        preloader.remove();
+        preloaderRemoved = true;
+      }
     });
+    
+    // Fallback 1: Remove after DOM is ready
+    document.addEventListener('DOMContentLoaded', () => {
+      setTimeout(() => {
+        if (!preloaderRemoved && preloader) {
+          preloader.remove();
+          preloaderRemoved = true;
+        }
+      }, 1000);
+    });
+    
+    // Fallback 2: Force remove after maximum wait time
+    setTimeout(() => {
+      if (!preloaderRemoved && preloader) {
+        preloader.remove();
+        preloaderRemoved = true;
+      }
+    }, 3000); // Maximum 3 seconds wait
+    
+    // Fallback 3: Remove if critical elements are loaded
+    const checkCriticalElements = () => {
+      const navbar = document.querySelector('.navbar');
+      const heroSection = document.querySelector('#hero');
+      
+      if (navbar && heroSection && !preloaderRemoved) {
+        setTimeout(() => {
+          if (!preloaderRemoved && preloader) {
+            preloader.remove();
+            preloaderRemoved = true;
+          }
+        }, 500);
+      }
+    };
+    
+    // Check critical elements periodically
+    setTimeout(checkCriticalElements, 1500);
+    setTimeout(checkCriticalElements, 2000);
   }
 
   /**
@@ -44,14 +87,28 @@
    * Animation on scroll function and init
    */
   function aosInit() {
-    AOS.init({
-      duration: 600,
-      easing: 'ease-in-out',
-      once: true,
-      mirror: false
-    });
+    if (typeof AOS !== 'undefined') {
+      AOS.init({
+        duration: 600,
+        easing: 'ease-in-out',
+        once: true,
+        mirror: false
+      });
+    }
   }
+  
+  // Multiple initialization attempts for deployment compatibility
   window.addEventListener('load', aosInit);
+  document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(aosInit, 100);
+  });
+  
+  // Fallback initialization
+  setTimeout(function() {
+    if (typeof AOS !== 'undefined' && AOS.init) {
+      aosInit();
+    }
+  }, 1000);
 
   /**
    * Init typed.js
