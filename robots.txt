@@ -1,0 +1,48 @@
+# Robots.txt for Pradosh Adhikari Portfolio Website
+# Laravel Developer & Full Stack Web Developer in Dharan, Nepal
+
+User-agent: *
+Allow: /
+
+# Priority crawling for important pages
+Allow: /index.html
+Allow: /portfolio-details.html
+Allow: /#about
+Allow: /#skills
+Allow: /#portfolio
+Allow: /#contact
+
+# Disallow unnecessary files and folders
+Disallow: /assets/vendor/
+Disallow: /forms/
+Disallow: *.log
+Disallow: *.txt
+Disallow: /temp/
+Disallow: /cache/
+Disallow: /.git/
+
+# Allow important assets
+Allow: /assets/img/
+Allow: /assets/css/
+Allow: /assets/js/
+
+# Sitemap location
+Sitemap: https://pradosh.com.np/sitemap.xml
+
+# Crawl-delay for better server performance
+Crawl-delay: 1
+
+# Google-specific directives
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 0.5
+
+# Bing-specific directives
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 1
+
+# Yandex-specific directives
+User-agent: YandexBot
+Allow: /
+Crawl-delay: 1

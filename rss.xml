@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Pradosh Adhikari - Laravel Developer Updates</title>
+    <description>Latest updates from Pradosh Adhikari, Professional Laravel Developer and Full Stack Web Developer in Dharan, Nepal. Expert in PHP, Laravel, MySQL, JavaScript and modern web development.</description>
+    <link>https://pradosh.com.np/</link>
+    <atom:link href="https://pradosh.com.np/rss.xml" rel="self" type="application/rss+xml" />
+    <language>en-us</language>
+    <managingEditor>pradoshak404@gmail.com (Pradosh Adhikari)</managingEditor>
+    <webMaster>pradoshak404@gmail.com (Pradosh Adhikari)</webMaster>
+    <lastBuildDate>Sat, 25 Jan 2025 12:00:00 GMT</lastBuildDate>
+    <category>Web Development</category>
+    <category>Laravel</category>
+    <category>PHP Development</category>
+    <category>Nepal Technology</category>
+
+    <item>
+      <title>Professional Laravel Developer Services in Dharan</title>
+      <description>Offering professional Laravel development services in Dharan, Nepal. Specialized in custom web applications, e-commerce solutions, and modern website development using PHP, Laravel, MySQL, and JavaScript.</description>
+      <link>https://pradosh.com.np/#about</link>
+      <guid>https://pradosh.com.np/#about</guid>
+      <pubDate>Sat, 25 Jan 2025 12:00:00 GMT</pubDate>
+      <category>Laravel Development</category>
+      <category>Web Development Services</category>
+    </item>
+
+    <item>
+      <title>Latest Web Development Projects Portfolio</title>
+      <description>Showcasing latest web development projects including Glory Cleaning Services, Samachar News Portal, Supply Chain Management System, and SOS Ambulance Service. All built with Laravel framework and modern web technologies.</description>
+      <link>https://pradosh.com.np/#portfolio</link>
+      <guid>https://pradosh.com.np/#portfolio</guid>
+      <pubDate>Sat, 25 Jan 2025 11:30:00 GMT</pubDate>
+      <category>Portfolio</category>
+      <category>Web Applications</category>
+    </item>
+
+    <item>
+      <title>Full Stack Web Development Skills and Expertise</title>
+      <description>Comprehensive skill set in Laravel Framework (85%), PHP (88%), MySQL Database (80%), JavaScript (75%), HTML5 (95%), CSS3 &amp; SCSS (90%), and modern web development tools and frameworks.</description>
+      <link>https://pradosh.com.np/#skills</link>
+      <guid>https://pradosh.com.np/#skills</guid>
+      <pubDate>Sat, 25 Jan 2025 11:00:00 GMT</pubDate>
+      <category>Technical Skills</category>
+      <category>Web Development</category>
+    </item>
+
+    <item>
+      <title>Contact Laravel Developer in Dharan, Nepal</title>
+      <description>Get in touch for professional web development services. Based in Dharan, Sunsari, Nepal. Available for Laravel development projects, custom web applications, and freelance work. Phone: +977 9840713733</description>
+      <link>https://pradosh.com.np/#contact</link>
+      <guid>https://pradosh.com.np/#contact</guid>
+      <pubDate>Sat, 25 Jan 2025 10:30:00 GMT</pubDate>
+      <category>Contact</category>
+      <category>Freelance Services</category>
+    </item>
+
+  </channel>
+</rss>
