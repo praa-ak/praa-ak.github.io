@@ -905,6 +905,87 @@
         box-shadow: var(--shadow-xl);
       }
       
+      /* Contact Form Feedback Messages */
+      .php-email-form .loading {
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        color: white;
+        padding: 15px 25px;
+        border-radius: 10px;
+        margin: 20px 0;
+        font-weight: 600;
+        animation: pulse 1.5s infinite;
+      }
+      
+      .php-email-form .error-message {
+        background: linear-gradient(135deg, #e74c3c, #c0392b);
+        color: white;
+        padding: 15px 25px;
+        border-radius: 10px;
+        margin: 20px 0;
+        font-weight: 600;
+        box-shadow: 0 4px 15px rgba(231, 76, 60, 0.3);
+        border-left: 4px solid #c0392b;
+      }
+      
+      .php-email-form .sent-message {
+        background: linear-gradient(135deg, var(--accent-color), #059669);
+        color: white;
+        padding: 15px 25px;
+        border-radius: 10px;
+        margin: 20px 0;
+        font-weight: 600;
+        box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+        border-left: 4px solid #059669;
+        position: relative;
+      }
+      
+      .php-email-form .sent-message::before {
+        content: '✓';
+        position: absolute;
+        left: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 1.2rem;
+        font-weight: bold;
+      }
+      
+      .php-email-form .error-message::before {
+        content: '✗';
+        position: absolute;
+        left: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 1.2rem;
+        font-weight: bold;
+      }
+      
+      .php-email-form .sent-message,
+      .php-email-form .error-message {
+        padding-left: 45px;
+        position: relative;
+        animation: slideInUp 0.5s ease;
+      }
+      
+      @keyframes slideInUp {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      
+      /* Disabled submit button state */
+      .php-email-form button[type="submit"]:disabled {
+        background: var(--bg-gray-100);
+        color: var(--text-light);
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+      }
+      
       /* Enhanced Testimonials */
       .testimonial-item {
         background: var(--bg-white);
@@ -1875,7 +1956,10 @@
                     ></textarea>
                   </div>
 
-                 
+                  <div class="col-md-12 text-center">
+                    <div class="loading" style="display: none;">Loading...</div>
+                    <div class="error-message" style="display: none;"></div>
+                    <div class="sent-message" style="display: none;">Your message has been sent. Thank you!</div>
 
                     <button type="submit">Send Message</button>
                   </div>
